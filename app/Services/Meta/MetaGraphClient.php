@@ -15,14 +15,23 @@ class MetaGraphClient
 
     protected string $appId;
 
-    protected string $appSecret;
+    protected ?string $appSecret;
 
     public function __construct()
     {
         $this->version = config('meta.graph_version', 'v22.0');
         $this->baseUrl = config('meta.graph_url', 'https://graph.facebook.com');
-        $this->appId = config('meta.app_id');
+        $this->appId = config('meta.app_id') ?? '';
         $this->appSecret = config('meta.app_secret');
+    }
+
+    protected function requireAppSecret(): string
+    {
+        if (empty($this->appSecret)) {
+            throw new \RuntimeException('META_APP_SECRET is not configured. Set it in your .env file.');
+        }
+
+        return $this->appSecret;
     }
 
     protected function client(): PendingRequest
@@ -50,7 +59,7 @@ class MetaGraphClient
     {
         $response = $this->client()->get("/{$this->version}/oauth/access_token", [
             'client_id' => $this->appId,
-            'client_secret' => $this->appSecret,
+            'client_secret' => $this->requireAppSecret(),
             'redirect_uri' => $redirectUri,
             'code' => $code,
         ]);
@@ -63,7 +72,7 @@ class MetaGraphClient
         $response = $this->client()->get("/{$this->version}/oauth/access_token", [
             'grant_type' => 'fb_exchange_token',
             'client_id' => $this->appId,
-            'client_secret' => $this->appSecret,
+            'client_secret' => $this->requireAppSecret(),
             'fb_exchange_token' => $shortLivedToken,
         ]);
 
@@ -204,7 +213,7 @@ class MetaGraphClient
     {
         $response = $this->client()->get("/{$this->version}/debug_token", [
             'input_token' => $accessToken,
-            'access_token' => $this->appId.'|'.$this->appSecret,
+            'access_token' => $this->appId.'|'.$this->requireAppSecret(),
         ]);
 
         return $this->handleResponse($response, 'debugToken');
@@ -226,7 +235,7 @@ class MetaGraphClient
             return null;
         }
 
-        $expectedSig = hash_hmac('sha256', $payload, $this->appSecret, true);
+        $expectedSig = hash_hmac('sha256', $payload, $this->requireAppSecret(), true);
 
         if (! hash_equals($sig, $expectedSig)) {
             Log::warning('Invalid signed_request signature');

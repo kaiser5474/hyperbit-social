@@ -1,4 +1,5 @@
 {
     "Welcome back, :name!": "Welcome back, :name!",
-    ":count account connected.|:count accounts connected.": ":count account connected.|:count accounts connected."
+    ":count account connected.|:count accounts connected.": ":count account connected.|:count accounts connected.",
+    "Contact Us": "Contact Us"
 }

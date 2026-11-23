@@ -59,7 +59,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/jarviscloud/hyperbit-social.git
+git clone https://github.com/kaiser5474/hyperbit-social.git
 cd hyperbit-social
 
 # Install PHP dependencies

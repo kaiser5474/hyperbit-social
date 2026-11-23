@@ -47,21 +47,39 @@ Before uploading, make sure you have:
 
 3. Clone the repository:
    ```bash
-   git clone https://github.com/jarviscloud/hyperbit-social.git .
+   git clone https://github.com/kaiser5474/hyperbit-social.git .
    ```
 
-4. Set the document root to `public`:
-   - In hPanel, go to **Websites** → **Manage** → **Advanced** → **PHP Configuration**
-   - Or create a symbolic link:
+4. Set the document root to `public` using one of these methods:
+
+   **Method 1: Symbolic link (preferred)**
    ```bash
    rm -rf public_html
    ln -s hyperbit-social/public public_html
    ```
 
+   **Method 2: PHP symlink fallback**
+   If shell `ln -s` fails (some hosts restrict symlinks), create the link with PHP:
+   ```bash
+   php -r "symlink('/home/u123456789/domains/social.hyperbitit.com/public', '/home/u123456789/domains/social.hyperbitit.com/public_html');"
+   ```
+
+   **Method 3: Root .htaccess rewrite**
+   If you cannot change the document root or create symlinks, use the root `.htaccess` approach:
+   1. Place all project files inside `public_html/` (or the web root)
+   2. Copy the included `.htaccess` file to the web root:
+      ```bash
+      cp .htaccess public_html/.htaccess
+      ```
+   3. This `.htaccess` will:
+      - Rewrite all requests to the `public/` subdirectory
+      - Deny access to sensitive files (`.env`, `composer.json`, etc.)
+      - Block direct access to `app/`, `config/`, `vendor/`, `storage/` (except public files)
+
 ### Option B: File Manager/FTP
 
 1. Upload all files except `vendor/` and `node_modules/`
-2. Set the document root to point to the `public` directory
+2. Set the document root to point to the `public` directory using Method 1, 2, or 3 above
 
 ## Step 4: Configure Environment
 
@@ -180,11 +198,21 @@ chown -R www-data:www-data storage bootstrap/cache
 
 ### Storage Link Issues
 
-If `storage:link` fails, manually create the link:
+If `php artisan storage:link` fails (e.g., `exec()` disabled on shared hosting), manually create the link:
+
+**Option 1: Shell symlink**
 ```bash
 cd public
 ln -s ../storage/app/public storage
 ```
+
+**Option 2: PHP symlink fallback**
+If shell symlinks are restricted, use PHP:
+```bash
+php -r "symlink('/home/u123456789/domains/social.hyperbitit.com/storage/app/public', '/home/u123456789/domains/social.hyperbitit.com/public/storage');"
+```
+
+Replace the paths with your actual installation path.
 
 ### Cron Not Running
 
@@ -220,6 +248,15 @@ php artisan route:cache
 php artisan view:cache
 ```
 
+## Shared Hosting Limitations
+
+HyperBit Social is designed to work within shared hosting restrictions:
+
+- **No `exec()`/`proc_open()`**: The scheduler runs commands directly without background processes
+- **No Redis**: Uses database driver for sessions, cache, and queue
+- **No long-running workers**: Scheduled posts are published via cron, not queue workers
+- **No Node.js runtime**: Frontend assets are pre-built and committed to the repository
+
 ## Security Notes
 
 - Never commit `.env` with real secrets
@@ -227,3 +264,4 @@ php artisan view:cache
 - Regularly update dependencies
 - Monitor Laravel logs for errors
 - Keep your Meta App Secret secure
+- If using the root `.htaccess` approach, verify sensitive directories are blocked by visiting `/vendor/autoload.php` (should return 403 Forbidden)
