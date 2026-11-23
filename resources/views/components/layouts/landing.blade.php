@@ -28,6 +28,9 @@
     </script>
     @endif
 
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
 
@@ -39,8 +42,11 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center space-x-2">
-                        <svg class="w-8 h-8 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 2L28.124 9v14L16 30 3.876 23V9L16 2z" fill="#4F46E5"/>
+                            <path d="M10 10v12M22 10v12M10 16h12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M24 6c1.5 1.5 2.5 3.5 2.5 5.5" stroke="#A5B4FC" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                            <path d="M22 4c2.5 2 4 5 4 8" stroke="#A5B4FC" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
                         </svg>
                         <span class="font-bold text-xl text-gray-900">HyperBit Social</span>
                     </a>
@@ -48,7 +54,7 @@
 
                 <div class="hidden md:flex items-center space-x-6">
                     <a href="#features" class="text-gray-600 hover:text-gray-900 text-sm font-medium">{{ __('Features') }}</a>
-                    <a href="#how-it-works" class="text-gray-600 hover:text-gray-900 text-sm font-medium">{{ __('How it Works') }}</a>
+                    <a href="#how-it-works" class="text-gray-600 hover:text-gray-900 text-sm font-medium">{{ __('How It Works') }}</a>
                     <a href="#pricing" class="text-gray-600 hover:text-gray-900 text-sm font-medium">{{ __('Pricing') }}</a>
                     <a href="#faq" class="text-gray-600 hover:text-gray-900 text-sm font-medium">{{ __('FAQ') }}</a>
 
@@ -92,8 +98,11 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">
                     <div class="flex items-center space-x-2 mb-4">
-                        <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 2L28.124 9v14L16 30 3.876 23V9L16 2z" fill="#818CF8"/>
+                            <path d="M10 10v12M22 10v12M10 16h12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M24 6c1.5 1.5 2.5 3.5 2.5 5.5" stroke="#C7D2FE" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                            <path d="M22 4c2.5 2 4 5 4 8" stroke="#C7D2FE" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
                         </svg>
                         <span class="font-bold text-xl">HyperBit Social</span>
                     </div>
@@ -110,7 +119,7 @@
                     <ul class="space-y-2 text-sm text-gray-400">
                         <li><a href="#features" class="hover:text-white">{{ __('Features') }}</a></li>
                         <li><a href="#pricing" class="hover:text-white">{{ __('Pricing') }}</a></li>
-                        <li><a href="https://github.com/jarviscloud/hyperbit-social" target="_blank" class="hover:text-white">GitHub</a></li>
+                        <li><a href="https://github.com/kaiser5474/hyperbit-social" target="_blank" class="hover:text-white">GitHub</a></li>
                     </ul>
                 </div>
 

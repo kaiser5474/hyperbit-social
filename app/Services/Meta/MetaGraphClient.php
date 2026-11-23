@@ -43,14 +43,27 @@ class MetaGraphClient
 
     public function getOAuthUrl(string $redirectUri, array $scopes = []): string
     {
-        $scopes = $scopes ?: config('meta.scopes', []);
-        $params = http_build_query([
-            'client_id' => $this->appId,
-            'redirect_uri' => $redirectUri,
-            'scope' => implode(',', $scopes),
-            'response_type' => 'code',
-            'state' => csrf_token(),
-        ]);
+        $loginConfigId = config('meta.login_config_id');
+
+        if ($loginConfigId) {
+            $params = http_build_query([
+                'client_id' => $this->appId,
+                'redirect_uri' => $redirectUri,
+                'config_id' => $loginConfigId,
+                'response_type' => 'code',
+                'override_default_response_type' => 'true',
+                'state' => csrf_token(),
+            ]);
+        } else {
+            $scopes = $scopes ?: config('meta.scopes', []);
+            $params = http_build_query([
+                'client_id' => $this->appId,
+                'redirect_uri' => $redirectUri,
+                'scope' => implode(',', $scopes),
+                'response_type' => 'code',
+                'state' => csrf_token(),
+            ]);
+        }
 
         return config('meta.oauth_url')."/{$this->version}/dialog/oauth?{$params}";
     }
@@ -79,7 +92,7 @@ class MetaGraphClient
         return $this->handleResponse($response, 'getLongLivedToken');
     }
 
-    public function getMe(string $accessToken, array $fields = ['id', 'name', 'email', 'picture']): array
+    public function getMe(string $accessToken, array $fields = ['id', 'name', 'picture']): array
     {
         $response = $this->client()->get("/{$this->version}/me", [
             'access_token' => $accessToken,

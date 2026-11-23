@@ -7,6 +7,9 @@
 
     <title>{{ $title ?? config('app.name') }}</title>
 
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
@@ -20,8 +23,11 @@
                     <div class="flex">
                         <div class="shrink-0 flex items-center">
                             <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
-                                <svg class="w-8 h-8 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                                <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M16 2L28.124 9v14L16 30 3.876 23V9L16 2z" fill="#4F46E5"/>
+                                    <path d="M10 10v12M22 10v12M10 16h12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M24 6c1.5 1.5 2.5 3.5 2.5 5.5" stroke="#A5B4FC" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                                    <path d="M22 4c2.5 2 4 5 4 8" stroke="#A5B4FC" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
                                 </svg>
                                 <span class="font-bold text-xl text-gray-900">HyperBit Social</span>
                             </a>

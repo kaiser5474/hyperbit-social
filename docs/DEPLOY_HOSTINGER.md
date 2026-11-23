@@ -111,6 +111,7 @@ Before uploading, make sure you have:
 
    META_APP_ID=1127758050142770
    META_APP_SECRET=your_actual_app_secret
+   META_LOGIN_CONFIG_ID=your_login_config_id
    META_REDIRECT_URI=https://social.hyperbitit.com/auth/facebook/callback
    ```
 
@@ -156,16 +157,44 @@ Add this line:
 
 In the [Meta for Developers](https://developers.facebook.com/apps/) console:
 
-1. **Settings** → **Basic**:
-   - App Domains: `social.hyperbitit.com`
-   - Privacy Policy URL: `https://social.hyperbitit.com/privacy`
-   - Terms of Service URL: `https://social.hyperbitit.com/terms`
-   - Data Deletion Callback URL: `https://social.hyperbitit.com/api/meta/data-deletion`
+### 7.1 Basic Settings
 
-2. **Facebook Login** → **Settings**:
-   - Valid OAuth Redirect URIs: `https://social.hyperbitit.com/auth/facebook/callback`
+Go to **Settings** → **Basic**:
+- App Domains: `social.hyperbitit.com`
+- Privacy Policy URL: `https://social.hyperbitit.com/privacy`
+- Terms of Service URL: `https://social.hyperbitit.com/terms`
+- Data Deletion Callback URL: `https://social.hyperbitit.com/api/meta/data-deletion`
 
-3. Add testers in **Roles** → **Test Users** or **Roles** → **Testers**
+### 7.2 Create Login Configuration (Required for Business Apps)
+
+Business-type Meta Apps require a **Login Configuration** instead of passing scopes directly:
+
+1. Go to **Facebook Login for Business** → **Configurations**
+2. Click **Create configuration**
+3. Select **User access token** as the token type
+4. Add these permissions:
+   - `pages_show_list`
+   - `pages_manage_posts`
+   - `pages_read_engagement`
+   - `instagram_basic`
+   - `instagram_content_publish`
+   - `business_management`
+5. Save and copy the **Configuration ID**
+6. Add to your `.env`:
+   ```env
+   META_LOGIN_CONFIG_ID=your_config_id_here
+   ```
+
+> **Note**: The `email` permission is not required. Users are identified by their Facebook ID.
+
+### 7.3 Configure OAuth Redirect
+
+Go to **Facebook Login for Business** → **Settings**:
+- Valid OAuth Redirect URIs: `https://social.hyperbitit.com/auth/facebook/callback`
+
+### 7.4 Add Testers
+
+Go to **Roles** → **Test Users** or **Roles** → **Testers** and add accounts for testing.
 
 ## Step 8: Verify Deployment
 
