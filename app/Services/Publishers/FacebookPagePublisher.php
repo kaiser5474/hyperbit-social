@@ -31,14 +31,18 @@ class FacebookPagePublisher implements PublisherInterface
 
             if ($post->hasMedia()) {
                 $result = $this->publishWithPhoto($account, $post->content, $post->getPublicMediaUrl());
+                $platformPostId = $this->facebookFeedPostId($result, requireFeedStory: true);
             } else {
                 $result = $this->publishText($account, $post->content);
+                $platformPostId = $this->facebookFeedPostId($result, requireFeedStory: false);
             }
 
-            $platformPostId = $result['id'] ?? $result['post_id'] ?? null;
-
             if (! $platformPostId) {
-                return PublishResult::failure('No post ID returned from Facebook');
+                return PublishResult::failure(
+                    $post->hasMedia()
+                        ? __('Facebook uploaded the photo but did not create a public Page feed post.')
+                        : 'No post ID returned from Facebook'
+                );
             }
 
             $permalink = $this->client->getPostPermalink($platformPostId, $account->access_token);
@@ -91,11 +95,61 @@ class FacebookPagePublisher implements PublisherInterface
 
     protected function publishWithPhoto(SocialAccount $account, string $message, string $imageUrl): array
     {
-        return $this->client->publishPhotoToFacebook(
+        $result = $this->client->publishPhotoToFacebook(
             $account->platform_id,
             $account->access_token,
             $imageUrl,
             $message
         );
+
+        if ($this->facebookFeedPostId($result, requireFeedStory: true)) {
+            return $result;
+        }
+
+        $photoId = isset($result['id']) && is_string($result['id']) && $result['id'] !== ''
+            ? $result['id']
+            : null;
+
+        if ($photoId === null) {
+            return $result;
+        }
+
+        Log::warning('Facebook photo had no feed post_id; attaching it to the Page feed', [
+            'page_id' => $account->platform_id,
+            'photo_id' => $photoId,
+        ]);
+
+        $feed = $this->client->publishPhotoStoryToFacebookFeed(
+            $account->platform_id,
+            $account->access_token,
+            $photoId,
+            $message
+        );
+
+        return [
+            'id' => $feed['id'] ?? $photoId,
+            'post_id' => $feed['id'] ?? $feed['post_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Graph /photos returns `id` (photo object) and `post_id` (Page feed story).
+     * The photo id is not a public feed URL and can be unpublished/unavailable.
+     */
+    protected function facebookFeedPostId(array $result, bool $requireFeedStory): ?string
+    {
+        $feedPostId = $result['post_id'] ?? null;
+
+        if (is_string($feedPostId) && $feedPostId !== '') {
+            return $feedPostId;
+        }
+
+        if ($requireFeedStory) {
+            return null;
+        }
+
+        $id = $result['id'] ?? null;
+
+        return is_string($id) && $id !== '' ? $id : null;
     }
 }

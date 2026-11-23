@@ -186,6 +186,7 @@
     "Permission denied. Please check your account permissions.": "Permiso denegado. Por favor verifica los permisos de tu cuenta.",
     "Too many requests. Please try again later.": "Demasiadas solicitudes. Por favor intenta más tarde.",
     "An error occurred while communicating with Facebook. Please try again.": "Ocurrió un error al comunicarse con Facebook. Por favor intenta de nuevo.",
+    "Facebook uploaded the photo but did not create a public Page feed post.": "Facebook subió la foto pero no creó un post público en el feed de la Página.",
     "Instagram requires an image for feed posts.": "Instagram requiere una imagen para posts del feed.",
     "Instagram media processing failed: :status": "El procesamiento de media de Instagram falló: :status",
     "No publisher available for this platform.": "No hay publicador disponible para esta plataforma.",
