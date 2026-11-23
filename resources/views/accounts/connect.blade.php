@@ -36,13 +36,7 @@
                                 <label class="flex items-center cursor-pointer">
                                     <input type="checkbox"
                                            name="accounts[]"
-                                           value="{{ json_encode([
-                                               'type' => 'facebook_page',
-                                               'id' => $page['id'],
-                                               'name' => $page['name'],
-                                               'token' => $page['access_token'],
-                                               'avatar' => $page['picture']['data']['url'] ?? null,
-                                           ]) }}"
+                                           value="fb_{{ $page['id'] }}"
                                            class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                            {{ $pageConnected ? 'checked' : '' }}
                                            x-model="selectedAccounts">
@@ -72,15 +66,7 @@
                                             <label class="flex items-center cursor-pointer">
                                                 <input type="checkbox"
                                                        name="accounts[]"
-                                                       value="{{ json_encode([
-                                                           'type' => 'instagram_business',
-                                                           'id' => $instagram['id'],
-                                                           'name' => $instagram['name'] ?? $instagram['username'],
-                                                           'username' => $instagram['username'],
-                                                           'token' => $page['access_token'],
-                                                           'avatar' => $instagram['profile_picture_url'] ?? null,
-                                                           'parent_page_id' => $page['id'],
-                                                       ]) }}"
+                                                       value="ig_{{ $instagram['id'] }}_{{ $page['id'] }}"
                                                        class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                                        {{ $instagram['is_connected'] ?? false ? 'checked' : '' }}
                                                        x-model="selectedAccounts">

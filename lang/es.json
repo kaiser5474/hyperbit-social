@@ -93,7 +93,8 @@
     "Connect a Facebook Page or Instagram account to start scheduling posts.": "Conecta una Página de Facebook o cuenta de Instagram para empezar a programar posts.",
     "Connect Account": "Conectar Cuenta",
     "channel(s)": "canal(es)",
-    "Posts": "Posts",
+    "Posts": "Publicaciones",
+    "Accounts": "Cuentas",
     "Manage your scheduled and published posts.": "Gestiona tus posts programados y publicados.",
     "Create Post": "Crear Post",
     "All": "Todos",
@@ -211,5 +212,7 @@
     "Completed": "Completado",
     "Processing": "Procesando",
     "Your data was successfully deleted on": "Tus datos fueron eliminados exitosamente el",
-    "Contact Us": "Contáctanos"
+    "Contact Us": "Contáctanos",
+    "Please select at least one account to connect.": "Por favor selecciona al menos una cuenta para conectar.",
+    "No accounts could be connected. Please try again.": "No se pudo conectar ninguna cuenta. Por favor intenta de nuevo."
 }

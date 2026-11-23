@@ -106,6 +106,18 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
         <main class="py-6">
             {{ $slot }}
         </main>
