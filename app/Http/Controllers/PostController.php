@@ -23,15 +23,19 @@ class PostController extends Controller
     {
         $user = auth()->user();
 
-        $query = $user->posts()->with('channels');
+        $query = $user->posts()->withCount('channels');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $posts = $query->orderByDesc('created_at')->paginate(20);
+        $posts = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        return view('posts.index', compact('posts'));
+        $view = $request->header('X-Posts-Panel') === '1'
+            ? 'posts.partials.panel'
+            : 'posts.index';
+
+        return view($view, compact('posts'));
     }
 
     public function create(): View
