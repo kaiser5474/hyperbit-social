@@ -53,7 +53,13 @@ class SocialAccount extends Model
     {
         return Attribute::make(
             get: fn (?string $value) => $value ? Crypt::decryptString($value) : null,
-            set: fn (string $value) => Crypt::encryptString($value),
+            set: function (?string $value) {
+                if ($value === null || $value === '') {
+                    return $value;
+                }
+
+                return Crypt::encryptString($value);
+            },
         );
     }
 

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('platform_id');
             $table->string('platform_name');
             $table->string('platform_username')->nullable();
-            $table->string('avatar_url')->nullable();
+            $table->text('avatar_url')->nullable();
 
             // For Instagram linked to a Facebook Page
             $table->string('parent_page_id')->nullable();

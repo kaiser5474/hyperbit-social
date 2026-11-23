@@ -267,9 +267,12 @@ class MetaGraphClient
     protected function handleResponse(Response $response, string $method): array
     {
         $data = $response->json();
+        $data = is_array($data) ? $data : [];
 
         if ($response->failed() || isset($data['error'])) {
-            $error = $data['error'] ?? ['message' => 'Unknown error', 'code' => $response->status()];
+            $error = is_array($data['error'] ?? null)
+                ? $data['error']
+                : ['message' => 'Unknown error', 'code' => $response->status()];
 
             Log::error("Meta API Error [{$method}]", [
                 'error' => $error,
@@ -277,10 +280,10 @@ class MetaGraphClient
             ]);
 
             throw new MetaApiException(
-                $error['message'] ?? 'Unknown error',
-                $error['code'] ?? $response->status(),
-                $error['error_subcode'] ?? null,
-                $error['type'] ?? null
+                (string) ($error['message'] ?? 'Unknown error'),
+                (int) ($error['code'] ?? $response->status()),
+                isset($error['error_subcode']) ? (int) $error['error_subcode'] : null,
+                isset($error['type']) ? (string) $error['type'] : null
             );
         }
 

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -228,5 +229,151 @@ class AccountsTest extends TestCase
 
         $account->refresh();
         $this->assertEquals('Updated Page Name', $account->platform_name);
+    }
+
+    public function test_page_without_access_token_is_skipped_without_server_error(): void
+    {
+        Http::fake([
+            '*graph.facebook.com*/me/accounts*' => Http::response([
+                'data' => [
+                    [
+                        'id' => '111',
+                        'name' => 'No Token Page',
+                        'picture' => ['data' => ['url' => 'https://example.com/pic.jpg']],
+                    ],
+                    [
+                        'id' => '222',
+                        'name' => 'Token Page',
+                        'access_token' => 'page_access_token_222',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_111', 'fb_222'],
+            ]);
+
+        $response->assertRedirect(route('accounts.index'));
+        $this->assertEquals(1, $this->user->socialAccounts()->count());
+        $this->assertDatabaseHas('social_accounts', [
+            'platform_id' => '222',
+        ]);
+        $this->assertDatabaseMissing('social_accounts', [
+            'platform_id' => '111',
+        ]);
+    }
+
+    public function test_connecting_only_pages_without_tokens_returns_friendly_error(): void
+    {
+        Http::fake([
+            '*graph.facebook.com*/me/accounts*' => Http::response([
+                'data' => [
+                    [
+                        'id' => '111',
+                        'name' => 'No Token Page',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->from(route('accounts.connect'))
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_111'],
+            ]);
+
+        $response->assertRedirect(route('accounts.connect'));
+        $response->assertSessionHas('error');
+        $this->assertEquals(0, $this->user->socialAccounts()->count());
+    }
+
+    public function test_long_facebook_avatar_url_is_stored(): void
+    {
+        $longUrl = 'https://scontent-iad3-1.xx.fbcdn.net/v/t39.30808-1/'
+            .str_repeat('a', 180)
+            .'.jpg?stp=dst-jpg_s200x200&_nc_cat=1&ccb=1-7&oh='
+            .str_repeat('b', 80)
+            .'&oe=65ABCDEF';
+
+        $this->assertGreaterThan(255, strlen($longUrl));
+
+        Http::fake([
+            '*graph.facebook.com*/me/accounts*' => Http::response([
+                'data' => [
+                    [
+                        'id' => '123456789',
+                        'name' => 'Test Page',
+                        'access_token' => 'page_access_token_123',
+                        'picture' => ['data' => ['url' => $longUrl]],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_123456789'],
+            ]);
+
+        $response->assertRedirect(route('accounts.index'));
+
+        $account = $this->user->socialAccounts()->first();
+        $this->assertNotNull($account);
+        $this->assertSame($longUrl, $account->avatar_url);
+    }
+
+    public function test_graph_api_connection_failure_does_not_500(): void
+    {
+        Http::fake(function () {
+            throw new ConnectionException('Connection timed out');
+        });
+
+        $response = $this->actingAs($this->user)
+            ->from(route('accounts.connect'))
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_123'],
+            ]);
+
+        $response->assertRedirect(route('accounts.connect'));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_graph_api_html_error_does_not_500(): void
+    {
+        Http::fake([
+            '*graph.facebook.com*' => Http::response('<html>Bad Gateway</html>', 502),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_123'],
+            ]);
+
+        $response->assertRedirect(route('accounts.connect'));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_graph_api_string_error_codes_do_not_500(): void
+    {
+        Http::fake([
+            '*graph.facebook.com*' => Http::response([
+                'error' => [
+                    'message' => 'Invalid OAuth access token.',
+                    'type' => 'OAuthException',
+                    'code' => '190',
+                    'error_subcode' => '463',
+                ],
+            ], 400),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('accounts.store'), [
+                'accounts' => ['fb_123'],
+            ]);
+
+        $response->assertRedirect(route('accounts.connect'));
+        $response->assertSessionHas('error');
     }
 }
