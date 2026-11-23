@@ -218,6 +218,11 @@ class PostController extends Controller
                 ->with('error', __('This post cannot be published.'));
         }
 
+        if ($post->postChannels()->doesntExist()) {
+            return redirect()->route('posts.show', $post)
+                ->with('error', __('Please select at least one channel.'));
+        }
+
         $post->markAsPublishing();
         $this->publishPost($post);
 
@@ -247,6 +252,15 @@ class PostController extends Controller
     protected function publishPost(Post $post): void
     {
         $post->load('postChannels.socialAccount');
+
+        if ($post->postChannels->isEmpty()) {
+            Log::warning('Refusing to publish a post with no channels', [
+                'post_id' => $post->id,
+            ]);
+            $post->markAsFailed();
+
+            return;
+        }
 
         $allSuccessful = true;
 

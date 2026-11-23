@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ __('Edit Post') }}</h1>
         </div>
 
-        <form action="{{ route('posts.update', $post) }}" method="POST" enctype="multipart/form-data" x-data="postComposer()">
+        <form action="{{ route('posts.update', $post) }}" method="POST" enctype="multipart/form-data" x-data="postComposer()" @submit="validateChannels($event)">
             @csrf
             @method('PUT')
 
@@ -54,12 +54,15 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-4">{{ __('Select Channels') }}</label>
+            <div class="bg-white rounded-xl border p-6 mb-6" :class="channelError ? 'border-red-400' : 'border-gray-200'" x-ref="channelsSection">
+                <label class="block text-sm font-medium text-gray-700 mb-4">
+                    {{ __('Select Channels') }}
+                    <span class="text-red-500">*</span>
+                </label>
                 <div class="space-y-3">
                     @foreach($accounts as $account)
                         <label class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="channels[]" value="{{ $account->id }}" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" {{ in_array($account->id, old('channels', $selectedChannels)) ? 'checked' : '' }}>
+                            <input type="checkbox" name="channels[]" value="{{ $account->id }}" x-model.number="selectedChannels" @change="channelError = selectedChannels.length === 0" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <div class="ml-3 flex items-center">
                                 <div class="w-8 h-8 rounded-full {{ $account->isFacebookPage() ? 'bg-blue-100' : 'bg-pink-100' }} flex items-center justify-center">
                                     @if($account->isFacebookPage())
@@ -80,6 +83,12 @@
                         </label>
                     @endforeach
                 </div>
+                <p x-show="channelError" x-cloak class="mt-3 text-sm text-red-600" role="alert">
+                    {{ __('Please select at least one channel.') }}
+                </p>
+                @error('channels')
+                    <p class="mt-3 text-sm text-red-600" x-show="!channelError">{{ $message }}</p>
+                @enderror
             </div>
 
             @if($post->isScheduled())
@@ -117,7 +126,20 @@
         function postComposer() {
             return {
                 content: @json(old('content', $post->content)),
-                removeMedia: false
+                removeMedia: false,
+                selectedChannels: @json(array_values(array_map('intval', (array) old('channels', $selectedChannels)))),
+                channelError: @json($errors->has('channels')),
+
+                validateChannels(event) {
+                    if (this.selectedChannels.length > 0) {
+                        this.channelError = false;
+                        return;
+                    }
+
+                    event.preventDefault();
+                    this.channelError = true;
+                    this.$refs.channelsSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         }
     </script>

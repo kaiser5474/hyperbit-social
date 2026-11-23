@@ -69,6 +69,101 @@ class PostsTest extends TestCase
         ]);
     }
 
+    public function test_cannot_create_post_without_channels(): void
+    {
+        $user = User::factory()->create();
+        SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)
+            ->from(route('posts.create'))
+            ->post('/posts', [
+                'content' => 'Eleanor Roosevelt quote',
+                'action' => 'publish_now',
+            ]);
+
+        $response->assertRedirect(route('posts.create'));
+        $response->assertSessionHasErrors(['channels']);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_cannot_create_post_with_empty_channels(): void
+    {
+        $user = User::factory()->create();
+        SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)
+            ->from(route('posts.create'))
+            ->post('/posts', [
+                'content' => 'Eleanor Roosevelt quote',
+                'channels' => [],
+                'action' => 'publish_now',
+            ]);
+
+        $response->assertRedirect(route('posts.create'));
+        $response->assertSessionHasErrors(['channels']);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_cannot_create_post_with_another_users_channel(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $foreignAccount = SocialAccount::factory()->facebookPage()->create(['user_id' => $other->id]);
+
+        $response = $this->actingAs($user)->post('/posts', [
+            'content' => 'Should not publish',
+            'channels' => [$foreignAccount->id],
+            'action' => 'publish_now',
+        ]);
+
+        $response->assertSessionHasErrors(['channels']);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_cannot_update_post_without_channels(): void
+    {
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->scheduled()->create(['user_id' => $user->id]);
+        $post->channels()->attach($account->id, ['status' => 'pending']);
+
+        $response = $this->actingAs($user)
+            ->from(route('posts.edit', $post))
+            ->put("/posts/{$post->id}", [
+                'content' => 'Updated without a channel',
+                'channels' => [],
+            ]);
+
+        $response->assertRedirect(route('posts.edit', $post));
+        $response->assertSessionHasErrors(['channels']);
+        $this->assertTrue($post->fresh()->channels->contains($account));
+    }
+
+    public function test_cannot_publish_now_post_without_channels(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->draft()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->post("/posts/{$post->id}/publish-now");
+
+        $response->assertRedirect(route('posts.show', $post));
+        $response->assertSessionHas('error');
+        $this->assertEquals(Post::STATUS_DRAFT, $post->fresh()->status);
+    }
+
+    public function test_create_form_blocks_submit_without_a_channel(): void
+    {
+        $user = User::factory()->create();
+        SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get(route('posts.create'));
+
+        $response->assertOk();
+        $response->assertSee('validateChannels', false);
+        $response->assertSee(__('Please select at least one channel.'));
+    }
+
     public function test_user_can_cancel_scheduled_post(): void
     {
         $user = User::factory()->create();
