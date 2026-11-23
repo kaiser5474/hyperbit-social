@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\PostChannel;
 use App\Models\SocialAccount;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -22,6 +23,8 @@ class PostsTest extends TestCase
         $response = $this->actingAs($user)->get('/posts');
 
         $response->assertStatus(200);
+        $response->assertSee('x-data="postIndex"', false);
+        $response->assertSee('HyperBit Social', false);
     }
 
     public function test_user_can_only_see_own_posts(): void
@@ -254,6 +257,102 @@ class PostsTest extends TestCase
 
         $post->refresh();
         $this->assertEquals(Post::STATUS_PUBLISHED, $post->status);
+    }
+
+    public function test_posts_can_be_filtered_by_status(): void
+    {
+        $user = User::factory()->create();
+
+        Post::factory()->scheduled()->create([
+            'user_id' => $user->id,
+            'content' => 'Unique scheduled post body',
+        ]);
+        Post::factory()->published()->create([
+            'user_id' => $user->id,
+            'content' => 'Unique published post body',
+        ]);
+        Post::factory()->failed()->create([
+            'user_id' => $user->id,
+            'content' => 'Unique failed post body',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/posts?status=scheduled')
+            ->assertOk()
+            ->assertSee('Unique scheduled post body')
+            ->assertDontSee('Unique published post body')
+            ->assertDontSee('Unique failed post body');
+
+        $this->actingAs($user)
+            ->get('/posts?status=published')
+            ->assertOk()
+            ->assertSee('Unique published post body')
+            ->assertDontSee('Unique scheduled post body');
+
+        $this->actingAs($user)
+            ->get('/posts?status=failed')
+            ->assertOk()
+            ->assertSee('Unique failed post body')
+            ->assertDontSee('Unique scheduled post body');
+    }
+
+    public function test_posts_index_ajax_returns_panel_without_layout(): void
+    {
+        $user = User::factory()->create();
+        Post::factory()->create([
+            'user_id' => $user->id,
+            'content' => 'Ajax panel post body',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['X-Posts-Panel' => '1'])
+            ->get('/posts?status=scheduled');
+
+        $response->assertOk();
+        $response->assertSee('Ajax panel post body');
+        $response->assertSee('data-posts-nav', false);
+        $response->assertDontSee('<html', false);
+        $response->assertDontSee('HyperBit Social', false);
+        $response->assertDontSee(__('Create Post'));
+    }
+
+    public function test_posts_index_does_not_lazy_load_channels(): void
+    {
+        Model::preventLazyLoading();
+
+        try {
+            $user = User::factory()->create();
+            $posts = Post::factory(3)->create(['user_id' => $user->id]);
+
+            foreach ($posts as $post) {
+                $account = SocialAccount::factory()->create(['user_id' => $user->id]);
+                $post->channels()->attach($account->id, ['status' => 'pending']);
+            }
+
+            $this->actingAs($user)
+                ->get('/posts')
+                ->assertOk()
+                ->assertSee('1 '.__('channel(s)'));
+        } finally {
+            Model::preventLazyLoading(false);
+        }
+    }
+
+    public function test_posts_index_pagination_preserves_status_filter(): void
+    {
+        $user = User::factory()->create();
+        Post::factory(21)->scheduled()->create(['user_id' => $user->id]);
+        Post::factory()->published()->create([
+            'user_id' => $user->id,
+            'content' => 'Published post should not appear on scheduled tab',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/posts?status=scheduled')
+            ->assertOk()
+            ->assertSee('status=scheduled', false)
+            ->assertSee('page=2', false)
+            ->assertDontSee('Published post should not appear on scheduled tab');
     }
 
     public function test_user_can_delete_post(): void
