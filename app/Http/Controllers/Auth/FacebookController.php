@@ -60,7 +60,6 @@ class FacebookController extends Controller
             $userData = $this->client->getMe($accessToken, [
                 'id',
                 'name',
-                'email',
                 'picture.width(200).height(200)',
             ]);
 
@@ -98,7 +97,6 @@ class FacebookController extends Controller
     protected function findOrCreateUser(array $userData, string $accessToken, int $expiresIn): User
     {
         $facebookId = $userData['id'];
-        $email = $userData['email'] ?? $facebookId.'@facebook.com';
         $name = $userData['name'];
         $avatar = $userData['picture']['data']['url'] ?? null;
 
@@ -115,22 +113,9 @@ class FacebookController extends Controller
             return $user;
         }
 
-        $existingUser = User::where('email', $email)->first();
-
-        if ($existingUser) {
-            $existingUser->update([
-                'facebook_id' => $facebookId,
-                'facebook_token' => $accessToken,
-                'facebook_token_expires_at' => now()->addSeconds($expiresIn),
-                'avatar' => $avatar,
-            ]);
-
-            return $existingUser;
-        }
-
         return User::create([
             'name' => $name,
-            'email' => $email,
+            'email' => $facebookId.'@fb.hyperbitit.com',
             'facebook_id' => $facebookId,
             'facebook_token' => $accessToken,
             'facebook_token_expires_at' => now()->addSeconds($expiresIn),

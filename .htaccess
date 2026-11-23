@@ -1,17 +1,24 @@
 # Root .htaccess for Hostinger shared hosting
 # Use this when the document root cannot point directly to public/
-# Place this file in the web root (e.g., public_html/) alongside the project folder
+# Place this file in the web root (public_html/) with the project files
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
 
-    # Redirect all requests to public/ subdirectory
+    # If the request is not already for public/ or its contents, rewrite to public/
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ /public/$1 [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # For requests to root, serve public/index.php
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteRule ^$ public/index.php [L]
 </IfModule>
 
-# Deny access to sensitive files and directories
-<FilesMatch "^\.env">
+# Deny access to sensitive files
+<FilesMatch "^\.">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -21,17 +28,19 @@
     </IfModule>
 </FilesMatch>
 
-# Deny direct access to application directories
+# Deny direct access to application directories and sensitive files
 <IfModule mod_rewrite.c>
-    RewriteRule ^app/.*$ - [F,L]
-    RewriteRule ^bootstrap/.*$ - [F,L]
-    RewriteRule ^config/.*$ - [F,L]
-    RewriteRule ^database/.*$ - [F,L]
-    RewriteRule ^resources/.*$ - [F,L]
-    RewriteRule ^routes/.*$ - [F,L]
-    RewriteRule ^storage/(?!app/public).*$ - [F,L]
-    RewriteRule ^tests/.*$ - [F,L]
-    RewriteRule ^vendor/.*$ - [F,L]
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^app(/|$) - [F,L]
+    RewriteRule ^bootstrap(/|$) - [F,L]
+    RewriteRule ^config(/|$) - [F,L]
+    RewriteRule ^database(/|$) - [F,L]
+    RewriteRule ^lang(/|$) - [F,L]
+    RewriteRule ^resources(/|$) - [F,L]
+    RewriteRule ^routes(/|$) - [F,L]
+    RewriteRule ^storage/(?!app/public) - [F,L]
+    RewriteRule ^tests(/|$) - [F,L]
+    RewriteRule ^vendor(/|$) - [F,L]
     RewriteRule ^artisan$ - [F,L]
     RewriteRule ^composer\.(json|lock)$ - [F,L]
     RewriteRule ^package(-lock)?\.json$ - [F,L]

@@ -19,25 +19,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | OAuth Scopes
+    | Facebook Login for Business Configuration
     |--------------------------------------------------------------------------
     |
-    | Permissions requested during Facebook Login. These scopes are required
-    | for the HyperBit Social MVP functionality.
+    | Business-type Meta Apps use "Login Configurations" instead of scope lists.
+    | When login_config_id is set, OAuth uses config_id parameter instead of scopes.
+    | Create a Login Configuration in Meta Developer Console:
+    | Facebook Login for Business > Configurations > Create
     |
     */
 
-    'scopes' => [
-        'public_profile',
-        'email',
-        'pages_show_list',
-        'pages_read_engagement',
-        'pages_manage_posts',
-        'pages_read_user_content',
-        'instagram_basic',
-        'instagram_content_publish',
-        'business_management',
-    ],
+    'login_config_id' => env('META_LOGIN_CONFIG_ID'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | OAuth Scopes (fallback when login_config_id is not set)
+    |--------------------------------------------------------------------------
+    |
+    | Permissions requested during Facebook Login when not using a Login Configuration.
+    | Note: 'email' scope is not used - we identify users by Facebook ID.
+    |
+    */
+
+    'scopes' => array_filter(array_map('trim', explode(',', env(
+        'META_SCOPES',
+        'pages_show_list,pages_manage_posts,pages_read_engagement,business_management'
+    )))),
 
     /*
     |--------------------------------------------------------------------------

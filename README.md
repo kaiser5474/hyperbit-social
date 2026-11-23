@@ -1,7 +1,7 @@
 # HyperBit Social
 
 <p align="center">
-  <img src="public/images/logo.png" alt="HyperBit Social" width="200">
+  <img src="public/favicon.svg" alt="HyperBit Social" width="80">
 </p>
 
 <p align="center">
@@ -104,24 +104,28 @@ Add these products to your app:
 - **Instagram Graph API**
 - **Pages API**
 
-### 3. Set Permissions
+### 3. Create a Login Configuration (Required for Business Apps)
 
-Request these permissions (most require App Review for public use):
+Business-type Meta Apps require a **Login Configuration** instead of passing scopes directly:
 
-| Permission | Purpose |
-|------------|---------|
-| `public_profile` | Basic user info |
-| `email` | User email address |
-| `pages_show_list` | List user's pages |
-| `pages_read_engagement` | Read page content |
-| `pages_manage_posts` | Publish to pages |
-| `instagram_basic` | Basic Instagram info |
-| `instagram_content_publish` | Publish to Instagram |
-| `business_management` | Manage business assets |
+1. Go to **Facebook Login for Business** → **Configurations**
+2. Click **Create configuration**
+3. Select **User access token** as the token type
+4. Add these permissions:
+   - `pages_show_list`
+   - `pages_manage_posts`
+   - `pages_read_engagement`
+   - `instagram_basic`
+   - `instagram_content_publish`
+   - `business_management`
+5. Save and copy the **Configuration ID**
+6. Add to your `.env`: `META_LOGIN_CONFIG_ID=your_config_id`
 
-### 4. Configure OAuth
+> **Note**: The `email` permission is not used. Users are identified by their Facebook ID.
 
-In **Facebook Login** → **Settings**:
+### 4. Configure OAuth Redirect
+
+In **Facebook Login for Business** → **Settings**:
 
 - **Valid OAuth Redirect URIs**: `https://your-domain.com/auth/facebook/callback`
 - **Deauthorize Callback URL**: `https://your-domain.com/api/meta/data-deletion`
@@ -142,6 +146,7 @@ Add to your `.env`:
 ```env
 META_APP_ID=your_app_id
 META_APP_SECRET=your_app_secret
+META_LOGIN_CONFIG_ID=your_login_config_id
 META_REDIRECT_URI=https://your-domain.com/auth/facebook/callback
 META_GRAPH_VERSION=v22.0
 ```
@@ -186,6 +191,7 @@ DB_PASSWORD=your_password
 # Meta API
 META_APP_ID=1127758050142770
 META_APP_SECRET=your_secret_here
+META_LOGIN_CONFIG_ID=your_login_config_id
 META_REDIRECT_URI=https://social.hyperbitit.com/auth/facebook/callback
 META_GRAPH_VERSION=v22.0
 ```
