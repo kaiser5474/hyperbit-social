@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('facebook_id')->nullable()->unique();
             $table->text('facebook_token')->nullable();
             $table->timestamp('facebook_token_expires_at')->nullable();
-            $table->string('avatar')->nullable();
+            $table->text('avatar')->nullable();
 
             // User preferences
             $table->string('timezone')->default('America/New_York');

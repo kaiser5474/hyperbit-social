@@ -34,18 +34,22 @@ class AccountController extends Controller
 
         try {
             $pagesResponse = $this->client->getPages($user->facebook_token);
-            $pages = $pagesResponse['data'] ?? [];
+            $pages = is_array($pagesResponse['data'] ?? null) ? $pagesResponse['data'] : [];
 
             $availablePages = [];
 
             foreach ($pages as $page) {
+                if (! is_array($page) || empty($page['id'])) {
+                    continue;
+                }
+
                 $isConnected = $user->socialAccounts()
                     ->where('platform', SocialAccount::PLATFORM_FACEBOOK_PAGE)
                     ->where('platform_id', $page['id'])
                     ->exists();
 
                 $instagramAccount = null;
-                if (isset($page['instagram_business_account']['id'])) {
+                if (isset($page['instagram_business_account']['id']) && ! empty($page['access_token'])) {
                     try {
                         $instagramAccount = $this->client->getInstagramAccount(
                             $page['instagram_business_account']['id'],
@@ -78,6 +82,11 @@ class AccountController extends Controller
 
             return redirect()->route('accounts.index')
                 ->with('error', $e->getUserFriendlyMessage());
+        } catch (\Throwable $e) {
+            Log::error('Unexpected error fetching pages', ['error' => $e->getMessage()]);
+
+            return redirect()->route('accounts.index')
+                ->with('error', __('An error occurred while communicating with Facebook. Please try again.'));
         }
     }
 
@@ -100,56 +109,78 @@ class AccountController extends Controller
 
         try {
             $pagesResponse = $this->client->getPages($user->facebook_token);
-            $pages = collect($pagesResponse['data'] ?? [])->keyBy('id');
+            $pages = collect($pagesResponse['data'] ?? [])
+                ->filter(fn ($page) => is_array($page) && isset($page['id']))
+                ->keyBy(fn (array $page) => (string) $page['id']);
         } catch (MetaApiException $e) {
             Log::error('Failed to fetch pages for account connection', ['error' => $e->getMessage()]);
 
             return redirect()->route('accounts.connect')
                 ->with('error', $e->getUserFriendlyMessage());
+        } catch (\Throwable $e) {
+            Log::error('Unexpected error fetching pages for account connection', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('accounts.connect')
+                ->with('error', __('An error occurred while communicating with Facebook. Please try again.'));
         }
 
         $connected = 0;
 
         foreach ($request->accounts as $accountId) {
-            if (str_starts_with($accountId, 'fb_')) {
-                $pageId = substr($accountId, 3);
-                $page = $pages->get($pageId);
+            $accountId = (string) $accountId;
 
-                if (! $page) {
-                    continue;
-                }
+            try {
+                if (str_starts_with($accountId, 'fb_')) {
+                    $pageId = substr($accountId, 3);
+                    $page = $pages->get($pageId);
 
-                $this->connectFacebookPage($user, $page);
-                $connected++;
+                    if (! $this->connectFacebookPage($user, is_array($page) ? $page : [])) {
+                        continue;
+                    }
 
-            } elseif (str_starts_with($accountId, 'ig_')) {
-                $parts = explode('_', $accountId, 3);
-                if (count($parts) < 3) {
-                    continue;
-                }
-
-                $igId = $parts[1];
-                $parentPageId = $parts[2];
-                $parentPage = $pages->get($parentPageId);
-
-                if (! $parentPage || ! isset($parentPage['instagram_business_account']['id'])) {
-                    continue;
-                }
-
-                if ($parentPage['instagram_business_account']['id'] !== $igId) {
-                    continue;
-                }
-
-                try {
-                    $instagram = $this->client->getInstagramAccount($igId, $parentPage['access_token']);
-                    $this->connectInstagramAccount($user, $instagram, $parentPage);
                     $connected++;
-                } catch (\Exception $e) {
-                    Log::warning('Failed to connect Instagram account', [
-                        'ig_id' => $igId,
-                        'error' => $e->getMessage(),
-                    ]);
+                } elseif (str_starts_with($accountId, 'ig_')) {
+                    $parts = explode('_', $accountId, 3);
+                    if (count($parts) < 3) {
+                        continue;
+                    }
+
+                    $igId = $parts[1];
+                    $parentPageId = $parts[2];
+                    $parentPage = $pages->get($parentPageId);
+
+                    if (! is_array($parentPage) || ! isset($parentPage['instagram_business_account']['id'])) {
+                        continue;
+                    }
+
+                    if ((string) $parentPage['instagram_business_account']['id'] !== $igId) {
+                        continue;
+                    }
+
+                    if (empty($parentPage['access_token'])) {
+                        Log::warning('Skipping Instagram account because parent page has no access token', [
+                            'ig_id' => $igId,
+                            'page_id' => $parentPageId,
+                        ]);
+
+                        continue;
+                    }
+
+                    $instagram = $this->client->getInstagramAccount($igId, $parentPage['access_token']);
+
+                    if (! $this->connectInstagramAccount($user, $instagram, $parentPage)) {
+                        continue;
+                    }
+
+                    $connected++;
                 }
+            } catch (\Throwable $e) {
+                Log::error('Failed to connect social account', [
+                    'account_id' => $accountId,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -162,16 +193,27 @@ class AccountController extends Controller
             ->with('success', trans_choice(':count account connected.|:count accounts connected.', $connected, ['count' => $connected]));
     }
 
-    protected function connectFacebookPage($user, array $page): void
+    protected function connectFacebookPage($user, array $page): bool
     {
+        $pageId = isset($page['id']) ? (string) $page['id'] : '';
+        $accessToken = $page['access_token'] ?? null;
+
+        if ($pageId === '' || ! is_string($accessToken) || $accessToken === '') {
+            Log::warning('Skipping Facebook Page without id or access token', [
+                'page_id' => $pageId !== '' ? $pageId : null,
+            ]);
+
+            return false;
+        }
+
         $existing = $user->socialAccounts()
             ->where('platform', SocialAccount::PLATFORM_FACEBOOK_PAGE)
-            ->where('platform_id', $page['id'])
+            ->where('platform_id', $pageId)
             ->first();
 
         $data = [
-            'access_token' => $page['access_token'],
-            'platform_name' => $page['name'],
+            'access_token' => $accessToken,
+            'platform_name' => $page['name'] ?? ('Facebook Page '.$pageId),
             'avatar_url' => $page['picture']['data']['url'] ?? null,
             'is_active' => true,
             'last_error' => null,
@@ -182,24 +224,38 @@ class AccountController extends Controller
         } else {
             $user->socialAccounts()->create(array_merge($data, [
                 'platform' => SocialAccount::PLATFORM_FACEBOOK_PAGE,
-                'platform_id' => $page['id'],
+                'platform_id' => $pageId,
             ]));
         }
+
+        return true;
     }
 
-    protected function connectInstagramAccount($user, array $instagram, array $parentPage): void
+    protected function connectInstagramAccount($user, array $instagram, array $parentPage): bool
     {
+        $instagramId = isset($instagram['id']) ? (string) $instagram['id'] : '';
+        $accessToken = $parentPage['access_token'] ?? null;
+
+        if ($instagramId === '' || ! is_string($accessToken) || $accessToken === '') {
+            Log::warning('Skipping Instagram account without id or access token', [
+                'ig_id' => $instagramId !== '' ? $instagramId : null,
+                'page_id' => $parentPage['id'] ?? null,
+            ]);
+
+            return false;
+        }
+
         $existing = $user->socialAccounts()
             ->where('platform', SocialAccount::PLATFORM_INSTAGRAM_BUSINESS)
-            ->where('platform_id', $instagram['id'])
+            ->where('platform_id', $instagramId)
             ->first();
 
         $data = [
-            'access_token' => $parentPage['access_token'],
-            'platform_name' => $instagram['name'] ?? $instagram['username'],
-            'platform_username' => $instagram['username'],
+            'access_token' => $accessToken,
+            'platform_name' => $instagram['name'] ?? $instagram['username'] ?? ('Instagram '.$instagramId),
+            'platform_username' => $instagram['username'] ?? null,
             'avatar_url' => $instagram['profile_picture_url'] ?? null,
-            'parent_page_id' => $parentPage['id'],
+            'parent_page_id' => isset($parentPage['id']) ? (string) $parentPage['id'] : null,
             'is_active' => true,
             'last_error' => null,
         ];
@@ -209,9 +265,11 @@ class AccountController extends Controller
         } else {
             $user->socialAccounts()->create(array_merge($data, [
                 'platform' => SocialAccount::PLATFORM_INSTAGRAM_BUSINESS,
-                'platform_id' => $instagram['id'],
+                'platform_id' => $instagramId,
             ]));
         }
+
+        return true;
     }
 
     public function destroy(SocialAccount $account): RedirectResponse
