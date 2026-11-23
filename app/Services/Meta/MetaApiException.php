@@ -54,7 +54,11 @@ class MetaApiException extends Exception
         }
 
         if ($this->isPermissionError()) {
-            return __('Permission denied. Please check your account permissions.');
+            if ($this->permissionsAreUnavailable()) {
+                return __('Facebook Page posting permissions are not available on this Meta app. In Meta for Developers, add pages_manage_posts and pages_read_engagement to the Facebook Login for Business configuration. If the app is Live, those permissions also need App Review. Then log out, log in with Facebook again, and reconnect the Page.');
+            }
+
+            return __('Permission denied. Log out, log in with Facebook again, and reconnect the Page so posting permissions can be granted.');
         }
 
         if ($this->isRateLimited()) {
@@ -62,5 +66,14 @@ class MetaApiException extends Exception
         }
 
         return __('An error occurred while communicating with Facebook. Please try again.');
+    }
+
+    public function permissionsAreUnavailable(): bool
+    {
+        $message = strtolower($this->getMessage());
+
+        return str_contains($message, 'are not available')
+            || str_contains($message, 'pages_manage_posts')
+            || str_contains($message, 'pages_read_engagement');
     }
 }

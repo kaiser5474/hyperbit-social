@@ -89,8 +89,7 @@ class PostController extends Controller
         if ($data['action'] === 'publish_now') {
             $this->publishPost($post);
 
-            return redirect()->route('posts.show', $post)
-                ->with('success', __('Your post is being published.'));
+            return $this->redirectAfterPublish($post);
         }
 
         return redirect()->route('posts.index')
@@ -226,8 +225,7 @@ class PostController extends Controller
         $post->markAsPublishing();
         $this->publishPost($post);
 
-        return redirect()->route('posts.show', $post)
-            ->with('success', __('Your post is being published.'));
+        return $this->redirectAfterPublish($post);
     }
 
     public function calendar(): View
@@ -298,5 +296,28 @@ class PostController extends Controller
             'post_id' => $post->id,
             'status' => $post->fresh()->status,
         ]);
+    }
+
+    protected function redirectAfterPublish(Post $post): RedirectResponse
+    {
+        $post->refresh();
+        $post->load('postChannels');
+
+        if ($post->isPublished()) {
+            return redirect()->route('posts.show', $post)
+                ->with('success', __('Your post has been published.'));
+        }
+
+        $failedChannel = $post->postChannels->first(
+            fn ($channel) => $channel->isFailed()
+        );
+
+        if ($post->isFailed() || $failedChannel) {
+            return redirect()->route('posts.show', $post)
+                ->with('error', $failedChannel?->error_message ?: __('Publishing failed. Check the channel status below.'));
+        }
+
+        return redirect()->route('posts.show', $post)
+            ->with('success', __('Your post is being published.'));
     }
 }
