@@ -55,6 +55,16 @@ class PublishDuePosts extends Command
             return;
         }
 
+        if ($post->postChannels->isEmpty()) {
+            $this->error("Post #{$post->id} has no channels selected.");
+            Log::warning('Refusing to publish a due post with no channels', [
+                'post_id' => $post->id,
+            ]);
+            $post->markAsFailed();
+
+            return;
+        }
+
         DB::transaction(function () use ($post) {
             $post->markAsPublishing();
 

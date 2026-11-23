@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ __('Create Post') }}</h1>
         </div>
 
-        <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" x-data="postComposer()">
+        <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" x-data="postComposer()" @submit="validateChannels($event)">
             @csrf
 
             <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -65,12 +65,15 @@
                 @enderror
             </div>
 
-            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-4">{{ __('Select Channels') }}</label>
+            <div class="bg-white rounded-xl border p-6 mb-6" :class="channelError ? 'border-red-400' : 'border-gray-200'" x-ref="channelsSection">
+                <label class="block text-sm font-medium text-gray-700 mb-4">
+                    {{ __('Select Channels') }}
+                    <span class="text-red-500">*</span>
+                </label>
                 <div class="space-y-3">
                     @foreach($accounts as $account)
                         <label class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="channels[]" value="{{ $account->id }}" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" {{ in_array($account->id, old('channels', [])) ? 'checked' : '' }}>
+                            <input type="checkbox" name="channels[]" value="{{ $account->id }}" x-model.number="selectedChannels" @change="channelError = selectedChannels.length === 0" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <div class="ml-3 flex items-center">
                                 @if($account->avatar_url)
                                     <img src="{{ $account->avatar_url }}" alt="{{ $account->platform_name }}" class="w-8 h-8 rounded-full">
@@ -95,8 +98,11 @@
                         </label>
                     @endforeach
                 </div>
+                <p x-show="channelError" x-cloak class="mt-3 text-sm text-red-600" role="alert">
+                    {{ __('Please select at least one channel.') }}
+                </p>
                 @error('channels')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-3 text-sm text-red-600" x-show="!channelError">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -149,9 +155,22 @@
     <script>
         function postComposer() {
             return {
-                content: '{{ old('content', '') }}',
+                content: @json(old('content', '')),
                 imagePreview: null,
                 publishAction: '{{ old('action', 'schedule') }}',
+                selectedChannels: @json(array_values(array_map('intval', (array) old('channels', [])))),
+                channelError: @json($errors->has('channels')),
+
+                validateChannels(event) {
+                    if (this.selectedChannels.length > 0) {
+                        this.channelError = false;
+                        return;
+                    }
+
+                    event.preventDefault();
+                    this.channelError = true;
+                    this.$refs.channelsSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                },
 
                 previewImage(event) {
                     const file = event.target.files[0];

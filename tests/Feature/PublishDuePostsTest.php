@@ -139,6 +139,19 @@ class PublishDuePostsTest extends TestCase
         $this->assertEquals(PostChannel::STATUS_FAILED, $postChannel->status);
     }
 
+    public function test_due_post_without_channels_is_not_published(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->dueNow()->create(['user_id' => $user->id]);
+
+        $this->artisan('posts:publish-due')
+            ->assertSuccessful();
+
+        $post->refresh();
+        $this->assertEquals(Post::STATUS_FAILED, $post->status);
+        $this->assertNull($post->published_at);
+    }
+
     public function test_partial_success_marks_post_as_published(): void
     {
         Http::fake([

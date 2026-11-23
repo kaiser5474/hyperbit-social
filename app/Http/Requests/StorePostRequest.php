@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesPostChannels;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePostRequest extends FormRequest
 {
+    use NormalizesPostChannels;
+
     public function authorize(): bool
     {
         return true;
@@ -40,14 +43,6 @@ class StorePostRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $user = $this->user();
-
-        $validChannels = $user->activeSocialAccounts()->pluck('id')->toArray();
-
-        if ($this->has('channels')) {
-            $this->merge([
-                'channels' => array_intersect($this->channels, $validChannels),
-            ]);
-        }
+        $this->normalizeChannels();
     }
 }

@@ -37,7 +37,7 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Channel Status') }}</h2>
 
             <div class="space-y-4">
-                @foreach($post->postChannels as $postChannel)
+                @forelse($post->postChannels as $postChannel)
                     <div class="flex items-center justify-between p-4 rounded-lg border border-gray-200">
                         <div class="flex items-center">
                             @if($postChannel->socialAccount->avatar_url)
@@ -89,7 +89,9 @@
                             @endif
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <p class="text-sm text-gray-500">{{ __('Please select at least one channel.') }}</p>
+                @endforelse
             </div>
         </div>
 
@@ -117,15 +119,24 @@
                 @endif
 
                 @if(in_array($post->status, ['draft', 'scheduled', 'failed']))
-                    <form action="{{ route('posts.publish-now', $post) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                            {{ __('Publish Now') }}
-                        </button>
-                    </form>
+                    @if($post->postChannels->isNotEmpty())
+                        <form action="{{ route('posts.publish-now', $post) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                                {{ __('Publish Now') }}
+                            </button>
+                        </form>
+                    @else
+                        <p class="text-sm text-amber-700">
+                            {{ __('Please select at least one channel.') }}
+                            @if($post->canBeEdited())
+                                <a href="{{ route('posts.edit', $post) }}" class="ml-1 font-medium text-indigo-600 hover:text-indigo-500">{{ __('Edit') }}</a>
+                            @endif
+                        </p>
+                    @endif
                 @endif
             </div>
 
