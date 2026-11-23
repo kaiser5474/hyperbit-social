@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://social.hyperbitit.com/sitemap.xml
+
+# Disallow admin and auth paths
+Disallow: /dashboard
+Disallow: /posts
+Disallow: /accounts
+Disallow: /settings
+Disallow: /auth
