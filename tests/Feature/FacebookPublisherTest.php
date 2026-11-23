@@ -87,6 +87,43 @@ class FacebookPublisherTest extends TestCase
         $this->assertNotNull($result->errorMessage);
     }
 
+    public function test_maps_unavailable_page_permissions_to_reconnect_guidance(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'error' => [
+                    'message' => '(#200) The permission(s) pages_read_engagement,pages_manage_posts are not available.',
+                    'type' => 'OAuthException',
+                    'code' => 200,
+                ],
+            ], 403),
+        ]);
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->withMedia()->create([
+            'user_id' => $user->id,
+            'content' => 'Esto es una prueba de Publicacion Programada',
+        ]);
+        $postChannel = PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+        ]);
+
+        $publisher = app(FacebookPagePublisher::class);
+        $result = $publisher->publish($postChannel);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('200', $result->errorCode);
+        $this->assertStringContainsString('pages_manage_posts', $result->errorMessage);
+        $this->assertTrue(
+            str_contains(strtolower($result->errorMessage), 'reconnect')
+            || str_contains(strtolower($result->errorMessage), 'reconecta')
+        );
+        $this->assertStringNotContainsString('HTTP request returned status code', $result->errorMessage);
+        $this->assertStringNotContainsString('HTTP 403', $result->errorMessage);
+    }
+
     public function test_only_supports_facebook_pages(): void
     {
         $fbAccount = SocialAccount::factory()->facebookPage()->make();

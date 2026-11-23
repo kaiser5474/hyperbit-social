@@ -2,7 +2,9 @@
 
 namespace App\Services\Meta;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -38,7 +40,22 @@ class MetaGraphClient
     {
         return Http::baseUrl($this->baseUrl)
             ->timeout(30)
-            ->retry(2, 100);
+            ->retry(
+                times: 2,
+                sleepMilliseconds: 100,
+                when: function (\Throwable $exception): bool {
+                    if ($exception instanceof ConnectionException) {
+                        return true;
+                    }
+
+                    if ($exception instanceof RequestException) {
+                        return $exception->response->serverError();
+                    }
+
+                    return false;
+                },
+                throw: false,
+            );
     }
 
     public function getOAuthUrl(string $redirectUri, array $scopes = []): string
