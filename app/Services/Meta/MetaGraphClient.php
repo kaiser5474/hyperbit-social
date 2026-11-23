@@ -154,6 +154,7 @@ class MetaGraphClient
         $params = [
             'access_token' => $accessToken,
             'message' => $message,
+            'published' => true,
         ];
 
         if ($link) {
@@ -170,6 +171,10 @@ class MetaGraphClient
         $params = [
             'access_token' => $accessToken,
             'url' => $imageUrl,
+            // Explicit: Graph /photos can create an unpublished photo object with only `id`
+            // (not visible on the Page feed or Photos tab) unless published=true.
+            'published' => true,
+            'no_story' => false,
         ];
 
         if ($caption) {
@@ -179,6 +184,29 @@ class MetaGraphClient
         $response = $this->client()->post("/{$this->version}/{$pageId}/photos", $params);
 
         return $this->handleResponse($response, 'publishPhotoToFacebook');
+    }
+
+    public function publishPhotoStoryToFacebookFeed(
+        string $pageId,
+        string $accessToken,
+        string $photoId,
+        ?string $message = null
+    ): array {
+        $params = [
+            'access_token' => $accessToken,
+            'published' => true,
+            'attached_media' => [
+                ['media_fbid' => $photoId],
+            ],
+        ];
+
+        if ($message) {
+            $params['message'] = $message;
+        }
+
+        $response = $this->client()->post("/{$this->version}/{$pageId}/feed", $params);
+
+        return $this->handleResponse($response, 'publishPhotoStoryToFacebookFeed');
     }
 
     public function createInstagramMediaContainer(

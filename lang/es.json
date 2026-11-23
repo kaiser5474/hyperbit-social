@@ -190,6 +190,7 @@
     "Facebook Page posting permissions are not available on this Meta app. In Meta for Developers, add pages_manage_posts and pages_read_engagement to the Facebook Login for Business configuration. If the app is Live, those permissions also need App Review. Then log out, log in with Facebook again, and reconnect the Page.": "Los permisos de publicación en Páginas de Facebook no están disponibles en esta app de Meta. En Meta for Developers, añade pages_manage_posts y pages_read_engagement a la configuración de Facebook Login for Business. Si la app está en modo Live, esos permisos también necesitan App Review. Luego cierra sesión, inicia sesión con Facebook de nuevo y reconecta la Página.",
     "Too many requests. Please try again later.": "Demasiadas solicitudes. Por favor intenta más tarde.",
     "An error occurred while communicating with Facebook. Please try again.": "Ocurrió un error al comunicarse con Facebook. Por favor intenta de nuevo.",
+    "Facebook uploaded the photo but did not create a public Page feed post.": "Facebook subió la foto pero no creó un post público en el feed de la Página.",
     "Instagram requires an image for feed posts.": "Instagram requiere una imagen para posts del feed.",
     "Instagram media processing failed: :status": "El procesamiento de media de Instagram falló: :status",
     "No publisher available for this platform.": "No hay publicador disponible para esta plataforma.",

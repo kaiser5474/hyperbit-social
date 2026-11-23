@@ -39,7 +39,11 @@ class FacebookPublisherTest extends TestCase
     public function test_publishes_photo_post_to_facebook(): void
     {
         Http::fake([
-            'graph.facebook.com/*' => Http::response(['id' => 'photo_123', 'post_id' => '12345_photo_post']),
+            'graph.facebook.com/*' => Http::response([
+                'id' => 'photo_123',
+                'post_id' => '12345_photo_post',
+                'permalink_url' => 'https://www.facebook.com/12345_photo_post',
+            ]),
         ]);
 
         $user = User::factory()->create();
@@ -57,7 +61,92 @@ class FacebookPublisherTest extends TestCase
         $result = $publisher->publish($postChannel);
 
         $this->assertTrue($result->success);
-        $this->assertNotNull($result->platformPostId);
+        $this->assertEquals('12345_photo_post', $result->platformPostId);
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), '/photos')) {
+                return false;
+            }
+
+            $data = $request->data();
+
+            return ($data['published'] ?? null) === true
+                && ($data['no_story'] ?? null) === false;
+        });
+    }
+
+    public function test_attaches_unpublished_photo_to_page_feed(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '/photos')) {
+                return Http::response(['id' => '1266327396763673']);
+            }
+
+            if (str_contains($request->url(), '/feed')) {
+                return Http::response(['id' => 'page_111_222']);
+            }
+
+            return Http::response(['permalink_url' => 'https://www.facebook.com/page_111_222']);
+        });
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->withMedia()->create([
+            'user_id' => $user->id,
+            'content' => 'Eleanor Roosevelt',
+        ]);
+        $postChannel = PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+        ]);
+
+        $publisher = app(FacebookPagePublisher::class);
+        $result = $publisher->publish($postChannel);
+
+        $this->assertTrue($result->success);
+        $this->assertEquals('page_111_222', $result->platformPostId);
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), '/feed')) {
+                return false;
+            }
+
+            $data = $request->data();
+            $attached = $data['attached_media'] ?? null;
+
+            return ($data['published'] ?? null) === true
+                && is_array($attached)
+                && ($attached[0]['media_fbid'] ?? null) === '1266327396763673';
+        });
+    }
+
+    public function test_photo_without_feed_story_fails(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '/photos')) {
+                return Http::response(['id' => 'photo_only']);
+            }
+
+            if (str_contains($request->url(), '/feed')) {
+                return Http::response([]);
+            }
+
+            return Http::response([]);
+        });
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->withMedia()->create(['user_id' => $user->id]);
+        $postChannel = PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+        ]);
+
+        $publisher = app(FacebookPagePublisher::class);
+        $result = $publisher->publish($postChannel);
+
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('feed', strtolower($result->errorMessage));
     }
 
     public function test_handles_api_error_gracefully(): void
