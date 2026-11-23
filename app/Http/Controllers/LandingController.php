@@ -14,6 +14,22 @@ class LandingController extends Controller
         return view('landing.index');
     }
 
+    public function indexEn(): View
+    {
+        session(['locale' => 'en']);
+        App::setLocale('en');
+
+        return view('landing.index');
+    }
+
+    public function indexEs(): View
+    {
+        session(['locale' => 'es']);
+        App::setLocale('es');
+
+        return view('landing.index');
+    }
+
     public function privacy(): View
     {
         return view('landing.privacy');

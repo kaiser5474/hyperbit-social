@@ -10,5 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('posts:publish-due')
     ->everyMinute()
-    ->withoutOverlapping()
-    ->runInBackground();
+    ->withoutOverlapping();

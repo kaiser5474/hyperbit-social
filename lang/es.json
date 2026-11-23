@@ -2,7 +2,7 @@
     "Open-Source Social Media Scheduler": "Programador de Redes Sociales Open-Source",
     "Schedule and publish posts to Facebook and Instagram. Self-hostable, open-source Buffer alternative built for teams and businesses.": "Programa y publica posts en Facebook e Instagram. Alternativa open-source a Buffer, auto-hospedable, para equipos y empresas.",
     "Features": "Características",
-    "How it Works": "Cómo Funciona",
+    "How It Works": "Cómo Funciona",
     "Pricing": "Precios",
     "FAQ": "Preguntas Frecuentes",
     "Dashboard": "Panel",
@@ -210,5 +210,6 @@
     "Status": "Estado",
     "Completed": "Completado",
     "Processing": "Procesando",
-    "Your data was successfully deleted on": "Tus datos fueron eliminados exitosamente el"
+    "Your data was successfully deleted on": "Tus datos fueron eliminados exitosamente el",
+    "Contact Us": "Contáctanos"
 }

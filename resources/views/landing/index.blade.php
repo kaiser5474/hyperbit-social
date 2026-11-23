@@ -58,7 +58,7 @@ $jsonLd = [
                             {{ __('Start Free with Facebook') }}
                         </a>
                     @endauth
-                    <a href="https://github.com/jarviscloud/hyperbit-social" target="_blank" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition">
+                    <a href="https://github.com/kaiser5474/hyperbit-social" target="_blank" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
                         </svg>
@@ -201,7 +201,7 @@ $jsonLd = [
                             {{ __('Well documented') }}
                         </li>
                     </ul>
-                    <a href="https://github.com/jarviscloud/hyperbit-social" target="_blank" class="inline-flex items-center mt-6 px-6 py-3 border border-white text-base font-medium rounded-xl text-white hover:bg-white hover:text-gray-900 transition">
+                    <a href="https://github.com/kaiser5474/hyperbit-social" target="_blank" class="inline-flex items-center mt-6 px-6 py-3 border border-white text-base font-medium rounded-xl text-white hover:bg-white hover:text-gray-900 transition">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
                         </svg>
@@ -216,7 +216,7 @@ $jsonLd = [
                             <div class="w-3 h-3 rounded-full bg-green-500"></div>
                         </div>
                         <code class="text-green-400">$</code>
-                        <code class="text-gray-300"> git clone https://github.com/jarviscloud/hyperbit-social.git</code>
+                        <code class="text-gray-300"> git clone https://github.com/kaiser5474/hyperbit-social.git</code>
                         <br><br>
                         <code class="text-green-400">$</code>
                         <code class="text-gray-300"> cd hyperbit-social && composer install</code>
@@ -270,7 +270,7 @@ $jsonLd = [
                             {{ __('Community support') }}
                         </li>
                     </ul>
-                    <a href="https://github.com/jarviscloud/hyperbit-social" target="_blank" class="block w-full text-center px-6 py-3 border-2 border-indigo-600 text-indigo-600 font-medium rounded-xl hover:bg-indigo-50 transition">
+                    <a href="https://github.com/kaiser5474/hyperbit-social" target="_blank" class="block w-full text-center px-6 py-3 border-2 border-indigo-600 text-indigo-600 font-medium rounded-xl hover:bg-indigo-50 transition">
                         {{ __('Download from GitHub') }}
                     </a>
                 </div>
@@ -280,7 +280,7 @@ $jsonLd = [
                         <span class="bg-indigo-600 text-white text-sm font-medium px-3 py-1 rounded-full">{{ __('Coming Soon') }}</span>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ __('Hosted') }}</h3>
-                    <div class="text-4xl font-bold text-gray-900 mb-4">$9<span class="text-lg text-gray-500">/{{ __('mo') }}</span></div>
+                    <div class="text-3xl font-bold text-indigo-600 mb-4">{{ __('Coming Soon') }}</div>
                     <p class="text-gray-600 mb-6">{{ __("We'll host it for you") }}</p>
                     <ul class="space-y-3 mb-8">
                         <li class="flex items-center text-gray-600">
@@ -308,9 +308,9 @@ $jsonLd = [
                             {{ __('Priority support') }}
                         </li>
                     </ul>
-                    <button disabled class="block w-full text-center px-6 py-3 bg-gray-200 text-gray-500 font-medium rounded-xl cursor-not-allowed">
-                        {{ __('Notify Me') }}
-                    </button>
+                    <a href="https://hyperbitit.com" target="_blank" class="block w-full text-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition">
+                        {{ __('Contact Us') }}
+                    </a>
                 </div>
             </div>
         </div>

@@ -16,6 +16,10 @@ Route::get('/terms', [LandingController::class, 'terms'])->name('terms');
 Route::get('/data-deletion', [LandingController::class, 'dataDeletion'])->name('data-deletion');
 Route::get('/data-deletion/status/{code}', [DataDeletionController::class, 'status'])->name('data-deletion.status');
 
+// Locale-prefixed landing routes
+Route::get('/en', [LandingController::class, 'indexEn'])->name('home.en');
+Route::get('/es', [LandingController::class, 'indexEs'])->name('home.es');
+
 // Language switching
 Route::get('/lang/{locale}', [LandingController::class, 'setLocale'])->name('lang.switch');
 
