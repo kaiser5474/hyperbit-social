@@ -5,4 +5,5 @@ use Illuminate\Support\Facades\Route;
 
 // Meta data deletion callback
 Route::post('/meta/data-deletion', [DataDeletionController::class, 'callback'])
+    ->middleware('throttle:30,1')
     ->name('api.meta.data-deletion');

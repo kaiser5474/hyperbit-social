@@ -58,9 +58,10 @@ class MetaGraphClient
             );
     }
 
-    public function getOAuthUrl(string $redirectUri, array $scopes = []): string
+    public function getOAuthUrl(string $redirectUri, array $scopes = [], ?string $state = null): string
     {
         $loginConfigId = config('meta.login_config_id');
+        $state ??= csrf_token();
 
         if ($loginConfigId) {
             $params = http_build_query([
@@ -69,7 +70,7 @@ class MetaGraphClient
                 'config_id' => $loginConfigId,
                 'response_type' => 'code',
                 'override_default_response_type' => 'true',
-                'state' => csrf_token(),
+                'state' => $state,
             ]);
         } else {
             $scopes = $scopes ?: config('meta.scopes', []);
@@ -78,7 +79,7 @@ class MetaGraphClient
                 'redirect_uri' => $redirectUri,
                 'scope' => implode(',', $scopes),
                 'response_type' => 'code',
-                'state' => csrf_token(),
+                'state' => $state,
             ]);
         }
 

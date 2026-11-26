@@ -26,8 +26,11 @@ Route::get('/lang/{locale}', [LandingController::class, 'setLocale'])->name('lan
 // Auth routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', fn () => redirect()->route('home'))->name('login');
-    Route::get('/auth/facebook', [FacebookController::class, 'redirect'])->name('auth.facebook');
-    Route::get('/auth/facebook/callback', [FacebookController::class, 'callback'])->name('auth.facebook.callback');
+
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::get('/auth/facebook', [FacebookController::class, 'redirect'])->name('auth.facebook');
+        Route::get('/auth/facebook/callback', [FacebookController::class, 'callback'])->name('auth.facebook.callback');
+    });
 });
 
 Route::post('/logout', [FacebookController::class, 'logout'])

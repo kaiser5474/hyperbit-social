@@ -183,6 +183,7 @@
     "Please log in with Facebook again to refresh tokens.": "Por favor inicia sesión con Facebook de nuevo para actualizar tokens.",
     "Facebook login was cancelled or failed.": "El inicio de sesión con Facebook fue cancelado o falló.",
     "Invalid response from Facebook.": "Respuesta inválida de Facebook.",
+    "Invalid OAuth state. Please try logging in again.": "Estado OAuth inválido. Por favor intenta iniciar sesión de nuevo.",
     "An unexpected error occurred. Please try again.": "Ocurrió un error inesperado. Por favor intenta de nuevo.",
     "Your Facebook session has expired. Please reconnect your account.": "Tu sesión de Facebook ha expirado. Por favor reconecta tu cuenta.",
     "Permission denied. Please check your account permissions.": "Permiso denegado. Por favor verifica los permisos de tu cuenta.",

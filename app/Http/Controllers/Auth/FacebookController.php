@@ -10,17 +10,23 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class FacebookController extends Controller
 {
+    public const OAUTH_STATE_SESSION_KEY = 'oauth_state';
+
     public function __construct(
         protected MetaGraphClient $client
     ) {}
 
-    public function redirect(): RedirectResponse
+    public function redirect(Request $request): RedirectResponse
     {
+        $state = Str::random(40);
+        $request->session()->put(self::OAUTH_STATE_SESSION_KEY, $state);
+
         $redirectUri = config('meta.redirect_uri');
-        $url = $this->client->getOAuthUrl($redirectUri);
+        $url = $this->client->getOAuthUrl($redirectUri, state: $state);
 
         return redirect()->away($url);
     }
@@ -34,8 +40,17 @@ class FacebookController extends Controller
                 'error_description' => $request->get('error_description'),
             ]);
 
+            $request->session()->forget(self::OAUTH_STATE_SESSION_KEY);
+
             return redirect()->route('login')
                 ->with('error', __('Facebook login was cancelled or failed.'));
+        }
+
+        if (! $this->isValidOAuthState($request)) {
+            Log::warning('Facebook OAuth invalid state');
+
+            return redirect()->route('login')
+                ->with('error', __('Invalid OAuth state. Please try logging in again.'));
         }
 
         $code = $request->get('code');
@@ -66,6 +81,7 @@ class FacebookController extends Controller
             $user = $this->findOrCreateUser($userData, $accessToken, $expiresIn);
 
             Auth::login($user, true);
+            $request->session()->regenerate();
 
             Log::info('User logged in via Facebook', [
                 'user_id' => $user->id,
@@ -92,6 +108,18 @@ class FacebookController extends Controller
             return redirect()->route('login')
                 ->with('error', __('An unexpected error occurred. Please try again.'));
         }
+    }
+
+    protected function isValidOAuthState(Request $request): bool
+    {
+        $expected = $request->session()->pull(self::OAUTH_STATE_SESSION_KEY);
+        $provided = $request->get('state');
+
+        if (! is_string($expected) || $expected === '' || ! is_string($provided) || $provided === '') {
+            return false;
+        }
+
+        return hash_equals($expected, $provided);
     }
 
     protected function findOrCreateUser(array $userData, string $accessToken, int $expiresIn): User
