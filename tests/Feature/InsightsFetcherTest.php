@@ -23,8 +23,8 @@ class InsightsFetcherTest extends TestCase
             if (str_contains($url, '/insights')) {
                 return Http::response([
                     'data' => [
-                        ['name' => 'post_impressions', 'values' => [['value' => 500]]],
-                        ['name' => 'post_impressions_unique', 'values' => [['value' => 320]]],
+                        ['name' => 'post_media_view', 'values' => [['value' => 500]]],
+                        ['name' => 'post_total_media_view_unique', 'values' => [['value' => 320]]],
                     ],
                 ]);
             }
@@ -138,5 +138,85 @@ class InsightsFetcherTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertSame(1200, $channel->fresh()->insights_reach);
+    }
+    public function test_falls_back_to_post_media_view_when_unique_metric_is_invalid(): void
+    {
+        $insightsCalls = 0;
+
+        Http::fake(function (\Illuminate\Http\Client\Request $request) use (&$insightsCalls) {
+            if (str_contains($request->url(), '/insights')) {
+                $insightsCalls++;
+                $metric = (string) $request['metric'];
+
+                if (str_contains($metric, 'post_total_media_view_unique')) {
+                    return Http::response([
+                        'error' => [
+                            'message' => '(#100) The value must be a valid insights metric',
+                            'type' => 'OAuthException',
+                            'code' => 100,
+                        ],
+                    ], 400);
+                }
+
+                return Http::response([
+                    'data' => [
+                        ['name' => 'post_media_view', 'values' => [['value' => 500]]],
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'reactions' => ['summary' => ['total_count' => 4]],
+                'comments' => ['summary' => ['total_count' => 1]],
+                'shares' => ['count' => 0],
+            ]);
+        });
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->published()->create(['user_id' => $user->id]);
+        $channel = PostChannel::factory()->published()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+            'platform_post_id' => '111_222',
+        ]);
+
+        app(InsightsFetcher::class)->refreshChannel($channel);
+
+        $channel->refresh();
+        $this->assertSame(2, $insightsCalls);
+        $this->assertNull($channel->insights_reach);
+        $this->assertSame(500, $channel->insights_views);
+        $this->assertNull($channel->insights_error);
+    }
+
+    public function test_stores_generic_metrics_error_instead_of_permission_denied(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'error' => [
+                    'message' => '(#100) The value must be a valid insights metric',
+                    'type' => 'OAuthException',
+                    'code' => 100,
+                ],
+            ], 400),
+        ]);
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->published()->create(['user_id' => $user->id]);
+        $channel = PostChannel::factory()->published()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+            'platform_post_id' => '111_222',
+        ]);
+
+        app(InsightsFetcher::class)->refreshChannel($channel);
+
+        $channel->refresh();
+        $this->assertNotNull($channel->insights_error);
+        $error = strtolower((string) $channel->insights_error);
+        $this->assertFalse(str_contains($error, 'permission denied') || str_contains($error, 'permiso denegado'));
+        $this->assertTrue(str_contains($error, 'metrics') || str_contains($error, 'métricas') || str_contains($error, 'metricas'));
     }
 }

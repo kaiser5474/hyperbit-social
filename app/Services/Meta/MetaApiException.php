@@ -39,7 +39,11 @@ class MetaApiException extends Exception
 
     public function isPermissionError(): bool
     {
-        return in_array($this->code, [10, 200, 230]) || $this->errorType === 'OAuthException';
+        if ($this->isTokenExpired()) {
+            return false;
+        }
+
+        return $this->code === 10 || ($this->code >= 200 && $this->code <= 299);
     }
 
     public function isRateLimited(): bool
@@ -65,7 +69,23 @@ class MetaApiException extends Exception
             return __('Too many requests. Please try again later.');
         }
 
+        if ($this->isInvalidInsightsMetric()) {
+            return __('Facebook could not return these metrics. Please try again later.');
+        }
+
         return __('An error occurred while communicating with Facebook. Please try again.');
+    }
+
+    public function isInvalidInsightsMetric(): bool
+    {
+        if ($this->code !== 100) {
+            return false;
+        }
+
+        $message = strtolower($this->getMessage());
+
+        return str_contains($message, 'insights metric')
+            || str_contains($message, 'invalid metric');
     }
 
     public function permissionsAreUnavailable(): bool
