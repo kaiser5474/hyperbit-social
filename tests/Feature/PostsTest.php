@@ -167,6 +167,8 @@ class PostsTest extends TestCase
         $response->assertOk();
         $response->assertSee('handleSubmit', false);
         $response->assertSee(__('Please select at least one channel.'));
+        $response->assertSee('name="action"', false);
+        $response->assertSee(':value="publishAction"', false);
     }
 
     public function test_user_can_cancel_scheduled_post(): void

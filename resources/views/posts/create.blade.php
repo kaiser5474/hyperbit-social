@@ -109,14 +109,17 @@
             <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-4">{{ __('When to publish') }}</label>
 
+                {{-- Always submitted; radios alone can be dropped when disabled during submit. --}}
+                <input type="hidden" name="action" :value="publishAction">
+
                 <div class="space-y-4">
-                    <label class="flex items-center">
-                        <input type="radio" name="action" value="publish_now" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action') === 'publish_now' ? 'checked' : '' }} x-model="publishAction" :disabled="submitting">
+                    <label class="flex items-center" :class="{ 'opacity-60 pointer-events-none': submitting }">
+                        <input type="radio" value="publish_now" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action') === 'publish_now' ? 'checked' : '' }} x-model="publishAction">
                         <span class="ml-2 text-gray-700">{{ __('Publish now') }}</span>
                     </label>
 
-                    <label class="flex items-center">
-                        <input type="radio" name="action" value="schedule" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action', 'schedule') === 'schedule' ? 'checked' : '' }} x-model="publishAction" :disabled="submitting">
+                    <label class="flex items-center" :class="{ 'opacity-60 pointer-events-none': submitting }">
+                        <input type="radio" value="schedule" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action', 'schedule') === 'schedule' ? 'checked' : '' }} x-model="publishAction">
                         <span class="ml-2 text-gray-700">{{ __('Schedule for later') }}</span>
                     </label>
 
