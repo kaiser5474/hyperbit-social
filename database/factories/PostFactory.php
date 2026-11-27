@@ -48,6 +48,15 @@ class PostFactory extends Factory
         ]);
     }
 
+    public function publishing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => Post::STATUS_PUBLISHING,
+            'scheduled_at' => now()->subMinutes(5),
+            'updated_at' => now()->subMinutes(2),
+        ]);
+    }
+
     public function published(): static
     {
         return $this->state(fn (array $attributes) => [

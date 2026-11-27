@@ -23,26 +23,50 @@ class PublishDuePosts extends Command
 
     public function handle(): int
     {
-        $posts = Post::dueForPublishing()
-            ->with(['postChannels.socialAccount'])
-            ->lockForUpdate()
-            ->get();
+        $processed = 0;
 
-        if ($posts->isEmpty()) {
+        while ($post = $this->claimNextPost()) {
+            $this->processPost($post);
+            $processed++;
+        }
+
+        if ($processed === 0) {
             $this->info('No posts due for publishing.');
 
             return self::SUCCESS;
         }
 
-        $this->info("Found {$posts->count()} post(s) due for publishing.");
-
-        foreach ($posts as $post) {
-            $this->processPost($post);
-        }
-
-        $this->info('Publishing complete.');
+        $this->info("Publishing complete. Processed {$processed} post(s).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Atomically claim the next due post with a row lock.
+     * Meta API calls happen outside this transaction.
+     */
+    protected function claimNextPost(): ?Post
+    {
+        return DB::transaction(function () {
+            $post = Post::dueForPublishing()
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $post) {
+                return null;
+            }
+
+            if ($post->status === Post::STATUS_SCHEDULED) {
+                $post->markAsPublishing();
+            } else {
+                // Refresh updated_at so concurrent workers skip this post
+                // during the grace period in dueForPublishing.
+                $post->touch();
+            }
+
+            return $post->fresh(['postChannels.socialAccount']);
+        });
     }
 
     protected function processPost(Post $post): void
@@ -65,28 +89,24 @@ class PublishDuePosts extends Command
             return;
         }
 
-        DB::transaction(function () use ($post) {
-            $post->markAsPublishing();
+        $allSuccessful = true;
+        $hasPartialSuccess = false;
 
-            $allSuccessful = true;
-            $hasPartialSuccess = false;
-
-            foreach ($post->postChannels as $postChannel) {
-                if ($postChannel->isPublished()) {
-                    continue;
-                }
-
-                $result = $this->publishChannel($postChannel);
-
-                if ($result) {
-                    $hasPartialSuccess = true;
-                } else {
-                    $allSuccessful = false;
-                }
+        foreach ($post->postChannels as $postChannel) {
+            if ($postChannel->isPublished()) {
+                continue;
             }
 
-            $this->updatePostStatus($post, $allSuccessful, $hasPartialSuccess);
-        });
+            $result = $this->publishChannel($postChannel);
+
+            if ($result) {
+                $hasPartialSuccess = true;
+            } else {
+                $allSuccessful = false;
+            }
+        }
+
+        $this->updatePostStatus($post, $allSuccessful, $hasPartialSuccess);
     }
 
     protected function publishChannel(PostChannel $postChannel): bool
@@ -167,6 +187,8 @@ class PublishDuePosts extends Command
             $post->markAsPublished();
             $this->warn("Post #{$post->id} partially published (some channels failed).");
         } elseif ($pendingCount > 0) {
+            // Keep status as publishing so the next cron run can resume.
+            $post->touch();
             $this->info("Post #{$post->id} has {$pendingCount} channel(s) still pending.");
         }
     }

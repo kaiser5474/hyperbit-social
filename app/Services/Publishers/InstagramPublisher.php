@@ -73,7 +73,10 @@ class InstagramPublisher implements PublisherInterface
                 return PublishResult::failure('No media ID returned from Instagram');
             }
 
-            $permalink = "https://www.instagram.com/p/{$platformPostId}/";
+            $permalink = $this->client->getInstagramMediaPermalink(
+                $platformPostId,
+                $account->access_token
+            );
 
             $account->markAsUsed();
 
@@ -81,6 +84,7 @@ class InstagramPublisher implements PublisherInterface
                 'post_id' => $post->id,
                 'account_id' => $account->platform_id,
                 'platform_post_id' => $platformPostId,
+                'permalink' => $permalink,
             ]);
 
             return PublishResult::success($platformPostId, $permalink);

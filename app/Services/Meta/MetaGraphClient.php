@@ -268,6 +268,27 @@ class MetaGraphClient
         }
     }
 
+    public function getInstagramMediaPermalink(string $mediaId, string $accessToken): ?string
+    {
+        try {
+            $response = $this->client()->get("/{$this->version}/{$mediaId}", [
+                'access_token' => $accessToken,
+                'fields' => 'permalink',
+            ]);
+
+            $data = $this->handleResponse($response, 'getInstagramMediaPermalink');
+
+            return $data['permalink'] ?? null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to get Instagram permalink', [
+                'media_id' => $mediaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     public function debugToken(string $accessToken): array
     {
         $response = $this->client()->get("/{$this->version}/debug_token", [

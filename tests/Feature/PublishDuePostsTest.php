@@ -92,11 +92,27 @@ class PublishDuePostsTest extends TestCase
 
     public function test_publishes_to_instagram_with_image(): void
     {
-        Http::fake([
-            '*graph.facebook.com*media' => Http::response(['id' => 'container_123']),
-            '*graph.facebook.com*container_123*' => Http::response(['status_code' => 'FINISHED']),
-            '*graph.facebook.com*media_publish*' => Http::response(['id' => 'ig_post_456']),
-        ]);
+        Http::fake(function (\Illuminate\Http\Client\Request $request) {
+            $url = $request->url();
+
+            if ($request->method() === 'POST' && str_contains($url, '/media_publish')) {
+                return Http::response(['id' => 'ig_post_456']);
+            }
+
+            if ($request->method() === 'POST' && str_contains($url, '/media')) {
+                return Http::response(['id' => 'container_123']);
+            }
+
+            if ($request->method() === 'GET' && str_contains($url, 'ig_post_456')) {
+                return Http::response(['permalink' => 'https://www.instagram.com/p/IGCODE456/']);
+            }
+
+            if ($request->method() === 'GET' && str_contains($url, 'container_123')) {
+                return Http::response(['status_code' => 'FINISHED']);
+            }
+
+            return Http::response(['error' => ['message' => 'Unexpected request', 'code' => 1]], 500);
+        });
 
         $user = User::factory()->create();
         $account = SocialAccount::factory()->instagram()->create(['user_id' => $user->id]);
@@ -112,11 +128,80 @@ class PublishDuePostsTest extends TestCase
         $post->refresh();
         $postChannel = $post->postChannels->first();
 
-        $this->assertTrue(
-            $post->status === Post::STATUS_PUBLISHED ||
-            ($post->status === Post::STATUS_FAILED && $postChannel->status === PostChannel::STATUS_FAILED),
-            'Post should be published or failed with proper channel status'
-        );
+        $this->assertEquals(Post::STATUS_PUBLISHED, $post->status);
+        $this->assertEquals(PostChannel::STATUS_PUBLISHED, $postChannel->status);
+        $this->assertSame('ig_post_456', $postChannel->platform_post_id);
+        $this->assertSame('https://www.instagram.com/p/IGCODE456/', $postChannel->permalink);
+    }
+
+    public function test_resumes_stuck_publishing_instagram_post(): void
+    {
+        Http::fake(function (\Illuminate\Http\Client\Request $request) {
+            $url = $request->url();
+
+            if ($request->method() === 'POST' && str_contains($url, '/media_publish')) {
+                return Http::response(['id' => 'ig_resumed_999']);
+            }
+
+            if ($request->method() === 'POST' && str_contains($url, '/media')) {
+                return Http::response(['error' => ['message' => 'Should not recreate container', 'code' => 1]], 500);
+            }
+
+            if ($request->method() === 'GET' && str_contains($url, 'ig_resumed_999')) {
+                return Http::response(['permalink' => 'https://www.instagram.com/p/RESUMED/']);
+            }
+
+            if ($request->method() === 'GET' && str_contains($url, 'stuck_container')) {
+                return Http::response(['status_code' => 'FINISHED']);
+            }
+
+            return Http::response(['error' => ['message' => 'Unexpected request', 'code' => 1]], 500);
+        });
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->instagram()->create(['user_id' => $user->id]);
+        $post = Post::factory()->publishing()->withMedia()->create(['user_id' => $user->id]);
+        PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+            'status' => PostChannel::STATUS_PUBLISHING,
+            'container_id' => 'stuck_container',
+            'container_status' => 'IN_PROGRESS',
+        ]);
+
+        $this->artisan('posts:publish-due')
+            ->assertSuccessful();
+
+        $post->refresh();
+        $postChannel = $post->postChannels->first();
+
+        $this->assertEquals(Post::STATUS_PUBLISHED, $post->status);
+        $this->assertEquals(PostChannel::STATUS_PUBLISHED, $postChannel->status);
+        $this->assertSame('ig_resumed_999', $postChannel->platform_post_id);
+        $this->assertSame('https://www.instagram.com/p/RESUMED/', $postChannel->permalink);
+    }
+
+    public function test_does_not_claim_freshly_updated_publishing_post(): void
+    {
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->instagram()->create(['user_id' => $user->id]);
+        $post = Post::factory()->publishing()->withMedia()->create([
+            'user_id' => $user->id,
+            'updated_at' => now(),
+        ]);
+        PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+            'status' => PostChannel::STATUS_PUBLISHING,
+            'container_id' => 'fresh_container',
+        ]);
+
+        $this->artisan('posts:publish-due')
+            ->assertSuccessful()
+            ->expectsOutput('No posts due for publishing.');
+
+        $post->refresh();
+        $this->assertEquals(Post::STATUS_PUBLISHING, $post->status);
     }
 
     public function test_instagram_fails_without_image(): void

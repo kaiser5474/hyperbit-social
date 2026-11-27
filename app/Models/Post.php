@@ -75,8 +75,17 @@ class Post extends Model
 
     public function scopeDueForPublishing($query)
     {
-        return $query->scheduled()
-            ->where('scheduled_at', '<=', now());
+        return $query->where(function ($q) {
+            $q->where(function ($scheduled) {
+                $scheduled->where('status', self::STATUS_SCHEDULED)
+                    ->where('scheduled_at', '<=', now());
+            })->orWhere(function ($publishing) {
+                // Resume in-progress posts after a short grace period so an
+                // in-flight worker is not claimed again immediately.
+                $publishing->where('status', self::STATUS_PUBLISHING)
+                    ->where('updated_at', '<=', now()->subSeconds(45));
+            });
+        });
     }
 
     public function scopeForUser($query, User $user)
