@@ -63,8 +63,8 @@ class PostInsightsTest extends TestCase
             if (str_contains($request->url(), '/insights')) {
                 return Http::response([
                     'data' => [
-                        ['name' => 'post_impressions', 'values' => [['value' => 999]]],
-                        ['name' => 'post_impressions_unique', 'values' => [['value' => 444]]],
+                        ['name' => 'post_media_view', 'values' => [['value' => 999]]],
+                        ['name' => 'post_total_media_view_unique', 'values' => [['value' => 444]]],
                     ],
                 ]);
             }

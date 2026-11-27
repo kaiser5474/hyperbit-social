@@ -293,13 +293,14 @@ class MetaGraphClient
     public function getFacebookPostInsights(string $postId, string $accessToken, array $metrics = []): array
     {
         $metrics = $metrics ?: [
-            'post_impressions',
-            'post_impressions_unique',
+            'post_media_view',
+            'post_total_media_view_unique',
         ];
 
         $response = $this->client()->get("/{$this->version}/{$postId}/insights", [
             'access_token' => $accessToken,
             'metric' => implode(',', $metrics),
+            'period' => 'lifetime',
         ]);
 
         return $this->handleResponse($response, 'getFacebookPostInsights');

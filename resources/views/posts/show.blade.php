@@ -224,8 +224,9 @@
                             @csrf
                             <button
                                 type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                                :disabled="submitting"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
+                                :aria-disabled="submitting"
                                 :aria-busy="submitting"
                             >
                                 <svg x-show="submitting" x-cloak class="animate-spin -ml-0.5 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">

@@ -90,10 +90,27 @@ class InsightsFetcher
      */
     protected function fetchFacebook(PostChannel $channel, SocialAccount $account): array
     {
-        $insights = $this->client->getFacebookPostInsights(
-            $channel->platform_post_id,
-            $account->access_token
-        );
+        try {
+            $insights = $this->client->getFacebookPostInsights(
+                $channel->platform_post_id,
+                $account->access_token
+            );
+        } catch (MetaApiException $e) {
+            if (! $e->isInvalidInsightsMetric()) {
+                throw $e;
+            }
+
+            Log::info('Facebook unique media viewers metric failed; falling back to post_media_view', [
+                'post_channel_id' => $channel->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $insights = $this->client->getFacebookPostInsights(
+                $channel->platform_post_id,
+                $account->access_token,
+                ['post_media_view']
+            );
+        }
 
         $byName = $this->mapInsightValues($insights['data'] ?? []);
 
@@ -103,8 +120,8 @@ class InsightsFetcher
         );
 
         return [
-            'reach' => $byName['post_impressions_unique'] ?? null,
-            'views' => $byName['post_impressions'] ?? null,
+            'reach' => $byName['post_total_media_view_unique'] ?? null,
+            'views' => $byName['post_media_view'] ?? null,
             'likes' => $this->nestedCount($engagement, 'reactions'),
             'comments' => $this->nestedCount($engagement, 'comments'),
             'shares' => isset($engagement['shares']['count'])

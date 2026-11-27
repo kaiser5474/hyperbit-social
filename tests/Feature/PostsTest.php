@@ -169,6 +169,9 @@ class PostsTest extends TestCase
         $response->assertSee(__('Please select at least one channel.'));
         $response->assertSee('name="action"', false);
         $response->assertSee(':value="publishAction"', false);
+        $response->assertDontSee(':disabled="submitting"', false);
+        $response->assertSee(':aria-disabled="submitting"', false);
+        $response->assertSee('pointer-events-none', false);
     }
 
     public function test_user_can_cancel_scheduled_post(): void
@@ -389,5 +392,22 @@ class PostsTest extends TestCase
 
         $response->assertRedirect(route('posts.index'));
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+    }
+    public function test_show_publish_now_button_is_not_disabled_during_submit(): void
+    {
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->draft()->create(['user_id' => $user->id]);
+        PostChannel::factory()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('posts.show', $post));
+
+        $response->assertOk();
+        $response->assertDontSee(':disabled="submitting"', false);
+        $response->assertSee(':aria-disabled="submitting"', false);
+        $response->assertSee('pointer-events-none', false);
     }
 }
