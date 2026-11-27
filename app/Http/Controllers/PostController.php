@@ -122,7 +122,7 @@ class PostController extends Controller
 
         $post->load('channels', 'postChannels.socialAccount');
 
-        // Do not fetch insights here — Meta calls would block the page load.
+        // Do not fetch insights here — that was blocking the page after publish.
         // Users refresh metrics explicitly via posts.insights.refresh.
 
         return view('posts.show', compact('post'));

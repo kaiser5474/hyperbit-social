@@ -136,6 +136,8 @@
     "No metrics yet. Click Refresh metrics.": "Aún no hay métricas. Pulsa Actualizar métricas.",
     "Scheduling…": "Programando…",
     "Publishing to Meta. Keep this tab open…": "Publicando en Meta. Mantén esta pestaña abierta…",
+    "Queuing post…": "Encolando post…",
+    "Your post was queued for publishing and will go live within a minute.": "Tu post quedó en cola y se publicará en menos de un minuto.",
     "This post is still publishing. Refresh in a moment or wait for the scheduler.": "Este post sigue publicándose. Recarga en un momento o espera al programador.",
     "Updated :time": "Actualizado :time",
     "Metrics updated.": "Métricas actualizadas.",

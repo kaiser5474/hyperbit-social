@@ -261,6 +261,29 @@ class PostsTest extends TestCase
         $this->assertEquals(Post::STATUS_PUBLISHED, $post->status);
     }
 
+    public function test_create_publish_now_publishes_immediately(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response(['id' => '12345_67890', 'permalink_url' => 'https://facebook.com/post/123']),
+        ]);
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->post('/posts', [
+            'content' => 'Publish now immediately',
+            'channels' => [$account->id],
+            'action' => 'publish_now',
+            'timezone' => 'America/New_York',
+        ]);
+
+        $post = Post::query()->where('user_id', $user->id)->latest('id')->first();
+        $this->assertNotNull($post);
+        $response->assertRedirect(route('posts.show', $post));
+        $response->assertSessionHas('success');
+        $this->assertEquals(Post::STATUS_PUBLISHED, $post->fresh()->status);
+    }
+
     public function test_posts_can_be_filtered_by_status(): void
     {
         $user = User::factory()->create();
