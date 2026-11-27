@@ -39,9 +39,10 @@ class MetaGraphClient
     protected function client(): PendingRequest
     {
         return Http::baseUrl($this->baseUrl)
-            ->timeout(30)
+            ->timeout(15)
+            ->connectTimeout(5)
             ->retry(
-                times: 2,
+                times: 1,
                 sleepMilliseconds: 100,
                 when: function (\Throwable $exception): bool {
                     if ($exception instanceof ConnectionException) {

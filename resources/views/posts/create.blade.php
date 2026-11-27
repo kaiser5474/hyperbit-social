@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ __('Create Post') }}</h1>
         </div>
 
-        <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" x-data="postComposer()" @submit="validateChannels($event)">
+        <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" x-data="postComposer()" @submit="handleSubmit($event)">
             @csrf
 
             <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -111,12 +111,12 @@
 
                 <div class="space-y-4">
                     <label class="flex items-center">
-                        <input type="radio" name="action" value="publish_now" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action') === 'publish_now' ? 'checked' : '' }} x-model="publishAction">
+                        <input type="radio" name="action" value="publish_now" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action') === 'publish_now' ? 'checked' : '' }} x-model="publishAction" :disabled="submitting">
                         <span class="ml-2 text-gray-700">{{ __('Publish now') }}</span>
                     </label>
 
                     <label class="flex items-center">
-                        <input type="radio" name="action" value="schedule" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action', 'schedule') === 'schedule' ? 'checked' : '' }} x-model="publishAction">
+                        <input type="radio" name="action" value="schedule" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" {{ old('action', 'schedule') === 'schedule' ? 'checked' : '' }} x-model="publishAction" :disabled="submitting">
                         <span class="ml-2 text-gray-700">{{ __('Schedule for later') }}</span>
                     </label>
 
@@ -141,14 +141,28 @@
             </div>
 
             <div class="flex items-center justify-end space-x-4">
-                <a href="{{ route('posts.index') }}" class="px-4 py-2 text-gray-700 font-medium hover:text-gray-900">
+                <a href="{{ route('posts.index') }}" class="px-4 py-2 text-gray-700 font-medium hover:text-gray-900" :class="{ 'pointer-events-none opacity-50': submitting }">
                     {{ __('Cancel') }}
                 </a>
-                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
-                    <span x-show="publishAction === 'publish_now'">{{ __('Publish Now') }}</span>
-                    <span x-show="publishAction === 'schedule'">{{ __('Schedule Post') }}</span>
+                <button
+                    type="submit"
+                    class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    :disabled="submitting"
+                    :aria-busy="submitting"
+                >
+                    <svg x-show="submitting" x-cloak class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span x-show="!submitting && publishAction === 'publish_now'">{{ __('Publish Now') }}</span>
+                    <span x-show="!submitting && publishAction === 'schedule'">{{ __('Schedule Post') }}</span>
+                    <span x-show="submitting && publishAction === 'publish_now'" x-cloak>{{ __('Publishing…') }}</span>
+                    <span x-show="submitting && publishAction === 'schedule'" x-cloak>{{ __('Scheduling…') }}</span>
                 </button>
             </div>
+            <p x-show="submitting && publishAction === 'publish_now'" x-cloak class="mt-3 text-sm text-gray-500 text-right" role="status" aria-live="polite">
+                {{ __('Publishing to Meta. Keep this tab open…') }}
+            </p>
         </form>
     </div>
 
@@ -160,16 +174,24 @@
                 publishAction: '{{ old('action', 'schedule') }}',
                 selectedChannels: @json(array_values(array_map('intval', (array) old('channels', [])))),
                 channelError: @json($errors->has('channels')),
+                submitting: false,
 
-                validateChannels(event) {
-                    if (this.selectedChannels.length > 0) {
-                        this.channelError = false;
+                handleSubmit(event) {
+                    if (this.selectedChannels.length === 0) {
+                        event.preventDefault();
+                        this.channelError = true;
+                        this.$refs.channelsSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
 
-                    event.preventDefault();
-                    this.channelError = true;
-                    this.$refs.channelsSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    this.channelError = false;
+
+                    if (this.submitting) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    this.submitting = true;
                 },
 
                 previewImage(event) {

@@ -93,7 +93,21 @@ class PostController extends Controller
         }
 
         if ($data['action'] === 'publish_now') {
-            $this->publishPost($post);
+            try {
+                $this->publishPost($post);
+            } catch (\Throwable $e) {
+                Log::error('Publish now failed unexpectedly', [
+                    'post_id' => $post->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $post->refresh();
+                if (! $post->isPublished() && ! $post->isFailed()) {
+                    $post->markAsFailed();
+                }
+
+                return redirect()->route('posts.show', $post)
+                    ->with('error', __('Publishing failed. Check the channel status below.'));
+            }
 
             return $this->redirectAfterPublish($post);
         }
@@ -108,14 +122,8 @@ class PostController extends Controller
 
         $post->load('channels', 'postChannels.socialAccount');
 
-        $hasPublishedChannels = $post->postChannels->contains(
-            fn ($channel) => $channel->isPublished() && filled($channel->platform_post_id)
-        );
-
-        if ($hasPublishedChannels) {
-            $this->insightsFetcher->refreshPost($post, force: false);
-            $post->load('postChannels.socialAccount');
-        }
+        // Do not fetch insights here — Meta calls would block the page load.
+        // Users refresh metrics explicitly via posts.insights.refresh.
 
         return view('posts.show', compact('post'));
     }
@@ -135,7 +143,17 @@ class PostController extends Controller
                 ->with('error', __('Metrics are available after the post is published.'));
         }
 
-        $this->insightsFetcher->refreshPost($post, force: true);
+        try {
+            $this->insightsFetcher->refreshPost($post, force: true);
+        } catch (\Throwable $e) {
+            Log::error('Insights refresh failed unexpectedly', [
+                'post_id' => $post->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('posts.show', $post)
+                ->with('error', __('Could not load metrics. Please try again.'));
+        }
 
         return redirect()->route('posts.show', $post)
             ->with('success', __('Metrics updated.'));
@@ -259,7 +277,22 @@ class PostController extends Controller
         }
 
         $post->markAsPublishing();
-        $this->publishPost($post);
+
+        try {
+            $this->publishPost($post);
+        } catch (\Throwable $e) {
+            Log::error('Publish now failed unexpectedly', [
+                'post_id' => $post->id,
+                'error' => $e->getMessage(),
+            ]);
+            $post->refresh();
+            if (! $post->isPublished() && ! $post->isFailed()) {
+                $post->markAsFailed();
+            }
+
+            return redirect()->route('posts.show', $post)
+                ->with('error', __('Publishing failed. Check the channel status below.'));
+        }
 
         return $this->redirectAfterPublish($post);
     }

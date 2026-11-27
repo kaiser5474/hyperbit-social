@@ -12,9 +12,10 @@ use Illuminate\Support\Facades\Log;
 
 class InstagramPublisher implements PublisherInterface
 {
-    protected const MAX_POLL_ATTEMPTS = 10;
+    // Keep sync publish short; cron resumes pending containers.
+    protected const MAX_POLL_ATTEMPTS = 3;
 
-    protected const POLL_INTERVAL_SECONDS = 3;
+    protected const POLL_INTERVAL_SECONDS = 2;
 
     public function __construct(
         protected MetaGraphClient $client

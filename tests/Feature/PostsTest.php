@@ -165,7 +165,7 @@ class PostsTest extends TestCase
         $response = $this->actingAs($user)->get(route('posts.create'));
 
         $response->assertOk();
-        $response->assertSee('validateChannels', false);
+        $response->assertSee('handleSubmit', false);
         $response->assertSee(__('Please select at least one channel.'));
     }
 

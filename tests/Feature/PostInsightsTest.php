@@ -14,7 +14,7 @@ class PostInsightsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_show_displays_performance_metrics(): void
+    public function test_show_displays_performance_metrics_without_autofetch(): void
     {
         Http::fake();
 
@@ -34,6 +34,27 @@ class PostInsightsTest extends TestCase
         $response->assertSee(__('Reach'));
         $response->assertSee('1,200');
         $response->assertSee('3,400');
+        Http::assertNothingSent();
+    }
+
+    public function test_show_does_not_block_on_missing_insights(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create();
+        $account = SocialAccount::factory()->facebookPage()->create(['user_id' => $user->id]);
+        $post = Post::factory()->published()->create(['user_id' => $user->id]);
+        PostChannel::factory()->published()->create([
+            'post_id' => $post->id,
+            'social_account_id' => $account->id,
+            'insights_fetched_at' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('posts.show', $post));
+
+        $response->assertOk();
+        $response->assertSee(__('No metrics yet. Click Refresh metrics.'));
+        Http::assertNothingSent();
     }
 
     public function test_refresh_insights_updates_metrics(): void
