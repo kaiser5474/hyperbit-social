@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
+use App\Services\Insights\InsightsFetcher;
 use App\Services\Publishers\PublisherManager;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,8 @@ use Illuminate\View\View;
 class PostController extends Controller
 {
     public function __construct(
-        protected PublisherManager $publisherManager
+        protected PublisherManager $publisherManager,
+        protected InsightsFetcher $insightsFetcher
     ) {}
 
     public function index(Request $request): View
@@ -106,7 +108,37 @@ class PostController extends Controller
 
         $post->load('channels', 'postChannels.socialAccount');
 
+        $hasPublishedChannels = $post->postChannels->contains(
+            fn ($channel) => $channel->isPublished() && filled($channel->platform_post_id)
+        );
+
+        if ($hasPublishedChannels) {
+            $this->insightsFetcher->refreshPost($post, force: false);
+            $post->load('postChannels.socialAccount');
+        }
+
         return view('posts.show', compact('post'));
+    }
+
+    public function refreshInsights(Post $post): RedirectResponse
+    {
+        $this->authorize('view', $post);
+
+        $post->load('postChannels.socialAccount');
+
+        $hasPublishedChannels = $post->postChannels->contains(
+            fn ($channel) => $channel->isPublished() && filled($channel->platform_post_id)
+        );
+
+        if (! $hasPublishedChannels) {
+            return redirect()->route('posts.show', $post)
+                ->with('error', __('Metrics are available after the post is published.'));
+        }
+
+        $this->insightsFetcher->refreshPost($post, force: true);
+
+        return redirect()->route('posts.show', $post)
+            ->with('success', __('Metrics updated.'));
     }
 
     public function edit(Post $post): View|RedirectResponse

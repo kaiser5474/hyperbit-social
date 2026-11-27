@@ -289,6 +289,58 @@ class MetaGraphClient
         }
     }
 
+    public function getFacebookPostInsights(string $postId, string $accessToken, array $metrics = []): array
+    {
+        $metrics = $metrics ?: [
+            'post_impressions',
+            'post_impressions_unique',
+        ];
+
+        $response = $this->client()->get("/{$this->version}/{$postId}/insights", [
+            'access_token' => $accessToken,
+            'metric' => implode(',', $metrics),
+        ]);
+
+        return $this->handleResponse($response, 'getFacebookPostInsights');
+    }
+
+    public function getFacebookPostEngagement(string $postId, string $accessToken): array
+    {
+        $response = $this->client()->get("/{$this->version}/{$postId}", [
+            'access_token' => $accessToken,
+            'fields' => 'reactions.summary(true),comments.summary(true),shares',
+        ]);
+
+        return $this->handleResponse($response, 'getFacebookPostEngagement');
+    }
+
+    public function getInstagramMediaInsights(string $mediaId, string $accessToken, array $metrics = []): array
+    {
+        $metrics = $metrics ?: [
+            'reach',
+            'views',
+            'likes',
+            'comments',
+        ];
+
+        $response = $this->client()->get("/{$this->version}/{$mediaId}/insights", [
+            'access_token' => $accessToken,
+            'metric' => implode(',', $metrics),
+        ]);
+
+        return $this->handleResponse($response, 'getInstagramMediaInsights');
+    }
+
+    public function getInstagramMediaEngagement(string $mediaId, string $accessToken): array
+    {
+        $response = $this->client()->get("/{$this->version}/{$mediaId}", [
+            'access_token' => $accessToken,
+            'fields' => 'like_count,comments_count',
+        ]);
+
+        return $this->handleResponse($response, 'getInstagramMediaEngagement');
+    }
+
     public function debugToken(string $accessToken): array
     {
         $response = $this->client()->get("/{$this->version}/debug_token", [

@@ -62,6 +62,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{post}', [PostController::class, 'destroy'])->name('destroy');
         Route::post('/{post}/cancel', [PostController::class, 'cancel'])->name('cancel');
         Route::post('/{post}/publish-now', [PostController::class, 'publishNow'])->name('publish-now');
+        Route::post('/{post}/insights/refresh', [PostController::class, 'refreshInsights'])
+            ->middleware('throttle:20,1')
+            ->name('insights.refresh');
     });
 
     // Calendar view

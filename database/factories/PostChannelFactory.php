@@ -30,6 +30,19 @@ class PostChannelFactory extends Factory
         ]);
     }
 
+    public function withInsights(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'insights_reach' => 1200,
+            'insights_views' => 3400,
+            'insights_likes' => 88,
+            'insights_comments' => 12,
+            'insights_shares' => 4,
+            'insights_fetched_at' => now(),
+            'insights_error' => null,
+        ]);
+    }
+
     public function failed(): static
     {
         return $this->state(fn (array $attributes) => [

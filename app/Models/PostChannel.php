@@ -31,12 +31,25 @@ class PostChannel extends Model
         'container_id',
         'container_status',
         'published_at',
+        'insights_reach',
+        'insights_views',
+        'insights_likes',
+        'insights_comments',
+        'insights_shares',
+        'insights_fetched_at',
+        'insights_error',
     ];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'insights_fetched_at' => 'datetime',
+            'insights_reach' => 'integer',
+            'insights_views' => 'integer',
+            'insights_likes' => 'integer',
+            'insights_comments' => 'integer',
+            'insights_shares' => 'integer',
         ];
     }
 
@@ -70,6 +83,11 @@ class PostChannel extends Model
         return $this->status === self::STATUS_FAILED;
     }
 
+    public function hasInsights(): bool
+    {
+        return $this->insights_fetched_at !== null && $this->insights_error === null;
+    }
+
     public function markAsPublishing(): void
     {
         $this->update(['status' => self::STATUS_PUBLISHING]);
@@ -101,6 +119,30 @@ class PostChannel extends Model
         $this->update([
             'container_id' => $containerId,
             'container_status' => $status,
+        ]);
+    }
+
+    /**
+     * @param  array{reach: ?int, views: ?int, likes: ?int, comments: ?int, shares: ?int}  $metrics
+     */
+    public function storeInsights(array $metrics): void
+    {
+        $this->update([
+            'insights_reach' => $metrics['reach'] ?? null,
+            'insights_views' => $metrics['views'] ?? null,
+            'insights_likes' => $metrics['likes'] ?? null,
+            'insights_comments' => $metrics['comments'] ?? null,
+            'insights_shares' => $metrics['shares'] ?? null,
+            'insights_fetched_at' => now(),
+            'insights_error' => null,
+        ]);
+    }
+
+    public function storeInsightsError(string $message): void
+    {
+        $this->update([
+            'insights_fetched_at' => now(),
+            'insights_error' => $message,
         ]);
     }
 }

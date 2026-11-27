@@ -43,7 +43,7 @@ return [
 
     'scopes' => array_filter(array_map('trim', explode(',', env(
         'META_SCOPES',
-        'pages_show_list,pages_manage_posts,pages_read_engagement,business_management'
+        'pages_show_list,pages_manage_posts,pages_read_engagement,read_insights,instagram_basic,instagram_content_publish,instagram_manage_insights,business_management'
     )))),
 
     /*

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Insights\InsightsFetcher;
 use App\Services\Meta\MetaGraphClient;
 use App\Services\Publishers\FacebookPagePublisher;
 use App\Services\Publishers\InstagramPublisher;
@@ -15,6 +16,10 @@ class MetaServiceProvider extends ServiceProvider
     {
         $this->app->singleton(MetaGraphClient::class, function () {
             return new MetaGraphClient;
+        });
+
+        $this->app->singleton(InsightsFetcher::class, function ($app) {
+            return new InsightsFetcher($app->make(MetaGraphClient::class));
         });
 
         $this->app->singleton(FacebookPagePublisher::class, function ($app) {
